@@ -2,18 +2,20 @@
 
 const express = require('express');
 const app = express();
+const db=require("../backend/db/db")
+const userRouter = require("./route/userRouters");
 const cors = require('cors');
 
 // -------------------------------
 
 app.use(express.json());
 
+
+db()
+
 //---------------------------------
 
-app.get('/', (req, res) => {
-    res.send('Welcome to the server');
-})
-
+app.use("/users", userRouter);
 // --------------------------------------
 
 const port = process.env.PORT || 3000;
