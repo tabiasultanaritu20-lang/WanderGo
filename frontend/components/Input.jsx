@@ -1,10 +1,7 @@
 import React from "react";
 
 
-/**
- * Reusable input component with Tailwind styles
- * Props: label, name, type, value, onChange, placeholder, autoComplete, required, disabled
- */
+
 const Input = ({
                    label,
                    name,
