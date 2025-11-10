@@ -1,6 +1,8 @@
 import React, {useMemo, useState, useEffect} from "react";
 import Input from "../components/Input";
 import quotes from "../utils/quotes";
+import { useNavigate } from 'react-router-dom';
+const navigate = useNavigate();
 
 const Login = ({action = "http://localhost:8080/api/user/login", onSuccess}) => {
     const [form, setForm] = useState({email: "", password: ""});
