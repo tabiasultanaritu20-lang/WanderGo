@@ -43,12 +43,12 @@ const registerUser = async (req, res) => {
 
         await user.save();
 
-        // // ✅ 5. Generate JWT token
-        // const token = jwt.sign(
-        //     { id: user._id, email: user.email },
-        //     process.env.JWT_SECRET,
-        //     { expiresIn: "7d" }
-        // );
+        // ✅ 5. Generate JWT token
+        const token = jwt.sign(
+            { id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
 
         // ✅ 6. Send response
         res.status(201).json({
@@ -62,7 +62,7 @@ const registerUser = async (req, res) => {
                 country: user.country,
 
             },
-            // token,
+            token,
         });
     } catch (error) {
         console.error("Register Error:", error);
@@ -84,7 +84,7 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-        // const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
         res.json({
             message: "Login successful",
@@ -95,7 +95,7 @@ const loginUser = async (req, res) => {
                 number: user.number,
                 country: user.country,
             },
-            // token,
+            token,
         });
     } catch (error) {
         console.error("Login Error:", error);
@@ -159,6 +159,12 @@ const deleteUser = async (req, res) => {
     }
 };
 
+
+
+const profile=async (req, res) => {
+    res.send("hello profile")
+}
+
 // ======================== EXPORT ALL ========================
 module.exports = {
     registerUser,
@@ -167,6 +173,7 @@ module.exports = {
     getUserById,
     updateUser,
     deleteUser,
+    profile,
 };
 
 
