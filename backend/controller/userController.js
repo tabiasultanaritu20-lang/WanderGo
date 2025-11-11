@@ -1,7 +1,7 @@
 const User=require("../model/userModel");
 
 const bcrypt=require("bcrypt");
-// import jwt from "jsonwebtoken";
+const jwt = require( "jsonwebtoken");
 
 const registerUser = async (req, res) => {
     try {
@@ -43,9 +43,14 @@ const registerUser = async (req, res) => {
 
         await user.save();
 
+        const playLoad={
+            id: user.id,
+            email:user.email,
+            role:user.role
+        }
         // ✅ 5. Generate JWT token
         const token = jwt.sign(
-            { id: user._id, email: user.email },
+            { playLoad },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
