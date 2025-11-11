@@ -17,6 +17,7 @@ app.use(express.json());
 
 // Connect to DB
 db();
+require('dotenv').config();
 
 // -------------------------------
 // Routes

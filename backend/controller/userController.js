@@ -5,13 +5,23 @@ const bcrypt=require("bcrypt");
 
 const registerUser = async (req, res) => {
     try {
-        const { name, email, password, number, country } = req.body;
+        let { name, email, password, number, country, role, adminKey } = req.body;
 
         // ✅ 1. Check if all required fields exist
-        if (!name || !email || !password || !number || !country) {
+        if (!name || !email || !password || !number || !country || !role) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
+        const requestedRole = (role || "user").toLowerCase();
+        if (requestedRole === "admin") {
+            if (adminKey !== process.env.ADMIN_ROLE) {
+                return res.status(403).json({ message: "Not allowed to create admin user" });
+            }
+            // IMPORTANT: assign to the outer 'role', don't redeclare
+            role = "admin";
+        } else {
+            role = "user";
+        }
         // ✅ 2. Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -28,6 +38,7 @@ const registerUser = async (req, res) => {
             password: hashedPassword,
             number,
             country,
+            role
         });
 
         await user.save();
@@ -45,9 +56,11 @@ const registerUser = async (req, res) => {
             user: {
                 id: user._id,
                 name: user.name,
+                role: user.role,
                 email: user.email,
                 number: user.number,
                 country: user.country,
+
             },
             // token,
         });
