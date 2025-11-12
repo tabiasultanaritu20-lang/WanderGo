@@ -7,7 +7,7 @@ const registerUser = async (req, res) => {
     try {
         let { name, email, password, number, country, role, adminKey } = req.body;
 
-        // ✅ 1. Check if all required fields exist
+        //  1. Check if all required fields exist
         if (!name || !email || !password || !number || !country || !role) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -22,16 +22,16 @@ const registerUser = async (req, res) => {
         } else {
             role = "user";
         }
-        // ✅ 2. Check if user already exists
+        //  2. Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // ✅ 3. Hash password
+        //  3. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ✅ 4. Create new user
+        //  4. Create new user
         const user = new User({
             name,
             email,
@@ -48,14 +48,14 @@ const registerUser = async (req, res) => {
             email:user.email,
             role:user.role
         }
-        // ✅ 5. Generate JWT token
+        //  5. Generate JWT token
         const token = jwt.sign(
             { playLoad },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
 
-        // ✅ 6. Send response
+        //  6. Send response
         res.status(201).json({
             message: "User registered successfully",
             user: {
