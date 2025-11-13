@@ -89,7 +89,10 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({
+            id: user._id,
+            email:user.email,
+            role:user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
         res.json({
             message: "Login successful",
@@ -99,6 +102,7 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 number: user.number,
                 country: user.country,
+                role: user.role
             },
             token,
         });
