@@ -1,7 +1,7 @@
-import React, {useMemo, useState, useEffect} from "react";
-import Input from "../components/Input";
+import React, { useMemo, useState, useEffect } from "react";
+import Input from "../components/Input.jsx";
 import quotes from "../utils/quotes";
-import {useNavigate, Link} from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = ({
                    action = "http://localhost:8080/api/user/login",

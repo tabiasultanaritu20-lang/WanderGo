@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import Input from "../components/Input";
+import Input from "../components/Input.jsx";
 import countries from "../utils/country";
 import quotes from "../utils/quotes";
 import { Link, useNavigate } from "react-router-dom";
