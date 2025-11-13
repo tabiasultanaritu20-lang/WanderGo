@@ -2,6 +2,8 @@ const express = require('express');
 const app = express();
 const db = require("../backend/db/db");
 const userRouter = require("./route/userRouters");
+const agencyRouter = require("./route/agencyRoutes");
+const tourRouter = require("./route/tourRoutes");
 const cors = require('cors');
 
 // -------------------------------
@@ -22,6 +24,8 @@ require('dotenv').config();
 // -------------------------------
 // Routes
 app.use("/api/user", userRouter);
+app.use("/api/agencies", agencyRouter);
+app.use("/api/tours", tourRouter);
 
 // -------------------------------
 const port = 8080;
