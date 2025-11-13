@@ -1,3 +1,5 @@
+require('dotenv').config();  // ✅ must be first
+
 const express = require('express');
 const app = express();
 const db = require("../backend/db/db");
@@ -17,7 +19,7 @@ app.use(express.json());
 
 // Connect to DB
 db();
-require('dotenv').config();
+
 
 // -------------------------------
 // Routes
