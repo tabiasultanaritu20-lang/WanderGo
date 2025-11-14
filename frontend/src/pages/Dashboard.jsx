@@ -1,8 +1,8 @@
 import React from 'react';
 
-function Dashboard(props) {
+function Dashboard() {
     return (
-        <div>Dashboard </div>
+        <div>Dashboard</div>
     );
 }
 

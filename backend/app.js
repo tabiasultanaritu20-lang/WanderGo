@@ -33,3 +33,10 @@ const port = 8080;
 app.listen(port, () => {
     console.log(`Listening on port ${port}!`);
 });
+
+
+// Safety & Emergency Hub routes
+const emergencyRouter = require("./route/emergencyRoutes");
+const safetyRouter = require("./route/safetyRoutes");
+app.use('/api/emergency-contacts', emergencyRouter);
+app.use('/api', safetyRouter);
