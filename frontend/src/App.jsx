@@ -1,11 +1,13 @@
 import './App.css'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-// NOTE: now everything is inside src/pages, so use "./pages/..."
+// all pages are inside src/pages
 import Login from './pages/Login.jsx'
 import SignUp from './pages/SignUp.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import TravelBlogFeed from './pages/TravelBlogFeed.jsx'
+import AgencyRegister from './pages/AgencyRegister.jsx'
+import CreateTourForm from './pages/CreateTourForm.jsx'
 
 function App() {
     return (
@@ -18,11 +20,15 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
 
-                {/* existing dashboard route */}
+                {/* dashboard */}
                 <Route path="/dashboard" element={<Dashboard />} />
 
-                {/* 🚀 your new Travel Blog Feed */}
+                {/* travel blog feed */}
                 <Route path="/blogs" element={<TravelBlogFeed />} />
+
+                {/* agency & tour routes */}
+                <Route path="/agency-register" element={<AgencyRegister />} />
+                <Route path="/create-tour" element={<CreateTourForm />} />
 
                 {/* 404 fallback */}
                 <Route path="*" element={<Navigate to="/login" replace />} />
@@ -31,4 +37,4 @@ function App() {
     )
 }
 
- export default App
+export default App

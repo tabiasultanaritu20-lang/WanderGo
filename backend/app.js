@@ -3,7 +3,9 @@ const app = express();
 const db = require("../backend/db/db");
 const userRouter = require("./route/userRouters");
 const blogRouter = require("./route/blogRoutes");  
+const tourRouter = require("./route/tourRouters");
 const cors = require('cors');
+require('dotenv').config();
 
 // -------------------------------
 // CORS setup
@@ -18,17 +20,16 @@ app.use(express.json());
 
 // Connect to DB
 db();
-require('dotenv').config();
 
 // -------------------------------
 // Routes
 app.use("/api/user", userRouter);
-app.use("/api/blogs", blogRouter);  // <--- ADD THIS
+app.use("/api/blogs", blogRouter);
+app.use("/api/tours", tourRouter);
 
 // -------------------------------
 const port = 8080;
 
 app.listen(port, () => {
     console.log(`Listening on port ${port}!`);
-
- });
+});
