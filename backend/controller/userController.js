@@ -1,13 +1,13 @@
 const User=require("../model/userModel");
 
 const bcrypt=require("bcrypt");
-// import jwt from "jsonwebtoken";
+const jwt = require( "jsonwebtoken");
 
 const registerUser = async (req, res) => {
     try {
         let { name, email, password, number, country, role, adminKey } = req.body;
 
-        // ✅ 1. Check if all required fields exist
+        //  1. Check if all required fields exist
         if (!name || !email || !password || !number || !country || !role) {
             return res.status(400).json({ message: "All fields are required" });
         }
@@ -22,16 +22,16 @@ const registerUser = async (req, res) => {
         } else {
             role = "user";
         }
-        // ✅ 2. Check if user already exists
+        //  2. Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "User already exists" });
         }
 
-        // ✅ 3. Hash password
+        //  3. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // ✅ 4. Create new user
+        //  4. Create new user
         const user = new User({
             name,
             email,
@@ -43,14 +43,19 @@ const registerUser = async (req, res) => {
 
         await user.save();
 
-        // // ✅ 5. Generate JWT token
-        // const token = jwt.sign(
-        //     { id: user._id, email: user.email },
-        //     process.env.JWT_SECRET,
-        //     { expiresIn: "7d" }
-        // );
+        const playLoad={
+            id: user.id,
+            email:user.email,
+            role:user.role
+        }
+        //  5. Generate JWT token
+        const token = jwt.sign(
+            { playLoad },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
 
-        // ✅ 6. Send response
+        //  6. Send response
         res.status(201).json({
             message: "User registered successfully",
             user: {
@@ -62,7 +67,7 @@ const registerUser = async (req, res) => {
                 country: user.country,
 
             },
-            // token,
+            token,
         });
     } catch (error) {
         console.error("Register Error:", error);
@@ -84,7 +89,10 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
-        // const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+        const token = jwt.sign({
+            id: user._id,
+            email:user.email,
+            role:user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
         res.json({
             message: "Login successful",
@@ -94,8 +102,9 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 number: user.number,
                 country: user.country,
+                role: user.role
             },
-            // token,
+            token,
         });
     } catch (error) {
         console.error("Login Error:", error);
@@ -159,6 +168,12 @@ const deleteUser = async (req, res) => {
     }
 };
 
+
+
+const profile=async (req, res) => {
+    res.send("hello profile")
+}
+
 // ======================== EXPORT ALL ========================
 module.exports = {
     registerUser,
@@ -167,6 +182,7 @@ module.exports = {
     getUserById,
     updateUser,
     deleteUser,
+    profile,
 };
 
 
