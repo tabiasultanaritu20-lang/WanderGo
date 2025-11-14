@@ -1,16 +1,15 @@
-require('dotenv').config();  // ✅ must be first
-
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const db = require("../backend/db/db");
 const userRouter = require("./route/userRouters");
+const tourRouter = require("./route/tourRouters");
 const cors = require('cors');
 
 // -------------------------------
 // CORS setup
 app.use(cors({
-    // origin: "http://localhost:5174", //  frontend URL,
-    origin:"*", //just For now
+    origin: "*", //  frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"], // allowed HTTP methods
     credentials: true, // allow cookies
 }));
@@ -25,6 +24,7 @@ db();
 // -------------------------------
 // Routes
 app.use("/api/user", userRouter);
+app.use("/api/tours", tourRouter);
 
 // -------------------------------
 const port = 8080;
