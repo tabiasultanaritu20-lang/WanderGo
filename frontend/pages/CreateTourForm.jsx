@@ -1,7 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-function CreateTourForm() {
+function CreateTourForm({ token: initialToken }) {
+  // 1) Always put ALL HOOKS at the top – fixed
+  const [token, setToken] = useState(null);
+  const [agencyId, setAgencyId] = useState(null);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Decode JWT without external libraries
+  const decodeToken = (jwt) => {
+    try {
+      const base64 = jwt.split(".")[1];
+      const decoded = JSON.parse(atob(base64));
+      return decoded.id; // adjust to your backend payload
+    } catch (err) {
+      return null;
+    }
+  };
+
+  // Check authentication on mount
+  useEffect(() => {
+    const saved = initialToken || localStorage.getItem("token");
+
+    if (saved) {
+      const id = decodeToken(saved);
+      setToken(saved);
+      setAgencyId(id);
+    }
+
+    setIsCheckingAuth(false); // authentication check completed
+  }, [initialToken]);
+
+  // 2) Declare all form hooks (always at top level)
   const [formData, setFormData] = useState({
     title: "",
     destinationCountry: "",
@@ -11,22 +41,34 @@ function CreateTourForm() {
     pricePerPerson: "",
     maxGroupSize: "",
     description: "",
-    imageUrl: ""
+    imageUrl: "",
+    isActive: true,
   });
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Suppose you stored agency info after login
-  const agencyData = JSON.parse(localStorage.getItem("agencyData"));
-  const token = localStorage.getItem("token");
-
-  if (!agencyData) {
-    return <p className="text-red-500">Please log in as an agency first.</p>;
+  // If still checking token, show loading instead of early return
+  if (isCheckingAuth) {
+    return <p className="text-center mt-10">Checking authentication…</p>;
   }
 
+  // If no token or invalid JWT
+  if (!token || !agencyId) {
+    return (
+        <p className="text-center mt-10 text-red-500">
+          Please log in first.
+        </p>
+    );
+  }
+
+  // Form handlers
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -35,18 +77,19 @@ function CreateTourForm() {
     setMessage("");
 
     try {
-      const response = await axios.post(
-        `http://localhost:5000/api/tours/${agencyData.id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
+      const res = await axios.post(
+          `http://localhost:8080/api/tours/${agencyId}/tours`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           }
-        }
       );
 
-      setMessage(response.data.message || "Tour created successfully!");
+      setMessage(res.data.message || "Tour created successfully!");
+
       setFormData({
         title: "",
         destinationCountry: "",
@@ -56,68 +99,89 @@ function CreateTourForm() {
         pricePerPerson: "",
         maxGroupSize: "",
         description: "",
-        imageUrl: ""
+        imageUrl: "",
+        isActive: true,
       });
-    } catch (error) {
-      setMessage(error.response?.data?.message || "Failed to create tour.");
+    } catch (err) {
+      setMessage(err.response?.data?.message || "Failed to create tour.");
     } finally {
       setLoading(false);
     }
   };
 
+  // Render component
   return (
-    <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Create New Tour</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {[
-          { label: "Title", name: "title" },
-          { label: "Destination Country", name: "destinationCountry" },
-          { label: "Destination City", name: "destinationCity" },
-          { label: "Start Date", name: "startDate", type: "date" },
-          { label: "End Date", name: "endDate", type: "date" },
-          { label: "Price Per Person", name: "pricePerPerson", type: "number" },
-          { label: "Max Group Size", name: "maxGroupSize", type: "number" },
-          { label: "Image URL", name: "imageUrl" }
-        ].map((field) => (
-          <div key={field.name}>
-            <label className="block font-medium text-gray-700 mb-1">{field.label}</label>
-            <input
-              type={field.type || "text"}
-              name={field.name}
-              value={formData[field.name]}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              required
+      <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow-lg">
+        <h2 className="text-3xl font-bold mb-6 text-center text-blue-600">
+          Create New Tour
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {[
+            { label: "Title", name: "title" },
+            { label: "Destination Country", name: "destinationCountry" },
+            { label: "Destination City", name: "destinationCity" },
+            { label: "Start Date", name: "startDate", type: "date" },
+            { label: "End Date", name: "endDate", type: "date" },
+            { label: "Price Per Person", name: "pricePerPerson", type: "number" },
+            { label: "Max Group Size", name: "maxGroupSize", type: "number" },
+            { label: "Image URL", name: "imageUrl" },
+          ].map((f) => (
+              <div key={f.name}>
+                <label className="block font-medium mb-1">{f.label}</label>
+                <input
+                    type={f.type || "text"}
+                    name={f.name}
+                    value={formData[f.name]}
+                    onChange={handleChange}
+                    required
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                />
+              </div>
+          ))}
+
+          <div>
+            <label className="block mb-1 font-medium">Description</label>
+            <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2"
             />
           </div>
-        ))}
 
-        <div>
-          <label className="block font-medium text-gray-700 mb-1">Description</label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={3}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-          ></textarea>
-        </div>
+          <div className="flex items-center gap-3">
+            <input
+                type="checkbox"
+                name="isActive"
+                checked={formData.isActive}
+                onChange={handleChange}
+                className="h-4 w-4"
+            />
+            <label className="font-medium">Active Tour</label>
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
-        >
-          {loading ? "Posting..." : "Create Tour"}
-        </button>
-      </form>
+          <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg"
+          >
+            {loading ? "Creating Tour..." : "Create Tour"}
+          </button>
+        </form>
 
-      {message && (
-        <p className={`mt-4 text-center ${message.includes("success") ? "text-green-600" : "text-red-600"}`}>
-          {message}
-        </p>
-      )}
-    </div>
+        {message && (
+            <p
+                className={`mt-5 text-center font-medium ${
+                    message.includes("success") ? "text-green-600" : "text-red-600"
+                }`}
+            >
+              {message}
+            </p>
+        )}
+      </div>
   );
 }
 

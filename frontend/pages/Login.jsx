@@ -24,7 +24,7 @@ const Login = ({
     const canSubmit = useMemo(() => {
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(form.email)) return false;
         return form.password.length >= 6;
-    }, [form]);
+    }, [form.email, form.password.length]);
 
     const onChange = (e) => {
         const {name, value} = e.target;
@@ -43,13 +43,11 @@ const Login = ({
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(form),
             });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data?.message || "Login failed. Please try again.");
-            }
+            const data = await res.json();          // get response JSON
+            localStorage.setItem("token", data.token); // store token
             onSuccess?.();
-            setForm({email: "", password: ""});
-            navigate("/dashboard");
+            setForm({ email: "", password: "" });
+            navigate("/create-tour");
         } catch (err) {
             setServerError(err.message);
         } finally {
