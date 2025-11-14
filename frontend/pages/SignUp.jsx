@@ -11,8 +11,8 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
         password: "",
         number: "",
         country: "Bangladesh",
-        role: "user",        // ← NEW
-        adminKey: "",        // ← NEW
+        role: "user",
+        adminKey: "",
     });
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState("");
