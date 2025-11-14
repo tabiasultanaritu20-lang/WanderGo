@@ -20,5 +20,16 @@ const adminOnly = (req, res, next) => {
     next();
 };
 
+const Agency_And_Admin = (req, res, next) => {
+    const role = req.user.playLoad.role;
 
-module.exports = {authMiddleware, adminOnly};
+    if (role !== "agency" && role !== "admin") {
+        return res.status(403).json({ message: "Access denied. Admin and Agency only." });
+    }
+
+    next();
+};
+
+
+
+module.exports = {authMiddleware, Agency_And_Admin,adminOnly};

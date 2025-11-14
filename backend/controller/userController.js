@@ -13,19 +13,23 @@ const registerUser = async (req, res) => {
         }
 
         const requestedRole = (role || "user").toLowerCase();
+
+// handle admin role
         if (requestedRole === "admin") {
             if (adminKey !== process.env.ADMIN_ROLE) {
                 return res.status(403).json({ message: "Not allowed to create admin user" });
             }
-            // IMPORTANT: assign to the outer 'role', don't redeclare
             role = "admin";
-        } else {
-            role = "user";
         }
-        //  2. Check if user already exists
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+
+// handle agency role (no adminKey required)
+        else if (requestedRole === "agency") {
+            role = "agency";
+        }
+
+// default role
+        else {
+            role = "user";
         }
 
         //  3. Hash password
