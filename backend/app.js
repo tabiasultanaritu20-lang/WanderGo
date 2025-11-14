@@ -9,7 +9,8 @@ const cors = require('cors');
 // -------------------------------
 // CORS setup
 app.use(cors({
-    origin: "http://localhost:5173", //  frontend URL
+    // origin: "http://localhost:5174", //  frontend URL,
+    origin:"*", //just For now
     methods: ["GET", "POST", "PUT", "DELETE"], // allowed HTTP methods
     credentials: true, // allow cookies
 }));
