@@ -7,9 +7,11 @@
   "type": "commonjs",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "dependencies": {
+    "2e": "^1.0.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
