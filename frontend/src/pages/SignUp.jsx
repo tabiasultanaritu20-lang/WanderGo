@@ -215,7 +215,7 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
                                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
                             >
                                 <option value="user">User</option>
-                                <option value="admin">Agency</option>
+                                <option value="agency">Agency</option>
                                 <option value="admin">Admin</option>
                             </select>
                             <p className="mt-1 text-xs text-slate-500">Select “Admin” only if you have the admin key.</p>
