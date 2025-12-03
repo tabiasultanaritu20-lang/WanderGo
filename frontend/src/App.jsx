@@ -7,10 +7,10 @@ import Login from "./pages/Login.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import CreateTourForm from "./pages/CreateTourForm.jsx";
 
-// teammates' pages
+
 import TravelBlogFeed from "./pages/TravelBlogFeed.jsx";
 import EmergencyHub from "./pages/EmergencyHub.jsx";
-// if you have an AgencyRegister page later:
+
 // import AgencyRegister from "./pages/AgencyRegister.jsx";
 
 function App() {
