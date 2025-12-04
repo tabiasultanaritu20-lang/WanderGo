@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import BlogCard from '../components/BlogCard.jsx';
 import CreateBlogBanner from '../components/CreateBlogBanner.jsx';
-import './TravelBlogFeed.css'; // page-specific styles
+import './TravelBlogFeed.css';
+import {baseApi} from "../utils/baseApi.js";
+import Nav from "../components/Nav.jsx"; // page-specific styles
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = baseApi
 
 const TravelBlogFeed = () => {
   const [blogs, setBlogs] = useState([]);
@@ -51,6 +53,8 @@ const TravelBlogFeed = () => {
   );
 
   return (
+      <>
+      <Nav/>
     <div className="blog-feed-bg">
       <div className="blog-feed-overlay">
         <div className="blog-feed-page">
@@ -117,6 +121,7 @@ const TravelBlogFeed = () => {
         </div>
       </div>
     </div>
+      </>
   );
 };
 
