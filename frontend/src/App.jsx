@@ -8,6 +8,7 @@ import Dashboard from './components/Dashboard.jsx'
 import CreateTourForm from "../src/pages/CreateTourForm.jsx";
 import TravelBlogFeed from "./pages/TravelBlogFeed.jsx";
 import MainDash from "./pages/DashboardMain.jsx";
+import EmergencyHub from "./pages/EmergencyHub.jsx";
 
 function App() {
     return (
@@ -17,6 +18,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/dashboard" element={<MainDash />} />
+                <Route path="/EmergencyHub" element={<EmergencyHub />} />
                 <Route path="/blog" element={<TravelBlogFeed />} />
                 <Route path="/create-tour" element={<CreateTourForm token={localStorage.getItem("token")} />} />
                 {/* 404 fallback */}

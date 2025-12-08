@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import NavTabs from "../components/NavTabs"
+import {baseApi} from "../utils/baseApi.js";
+import Nav from "../components/Nav.jsx";
 
-const API = "http://localhost:8080"
+const API = baseApi
 
 export default function EmergencyHub() {
   const [query, setQuery] = useState({ country: "BD", city: "Dhaka" })
@@ -119,7 +121,7 @@ export default function EmergencyHub() {
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
-      <NavTabs />
+      <Nav />
       <div className="relative max-w-6xl mx-auto p-4">
         <h1 className="text-2xl font-semibold">Safety & Emergency Hub</h1>
         <p className="text-slate-600 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>

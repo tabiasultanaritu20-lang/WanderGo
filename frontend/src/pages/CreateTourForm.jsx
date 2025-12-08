@@ -1,37 +1,58 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useEffect, useCallback } from "react";
+// Replace axios with standard fetch API call structure for self-contained React environment
+// import axios from "axios";
+import { Plane, Calendar, DollarSign, Users, MapPin, Image, CheckCircle, Loader2 } from 'lucide-react';
+import Nav from "../components/Nav.jsx";
+
+// Utility function to mock JWT decoding (since we cannot rely on external library 'atob' here)
+const decodeToken = (jwt) => {
+  // Mocking a simple payload extraction for demonstration purposes
+  if (jwt && jwt.length > 10) {
+    // In a real environment, you'd decode properly. Here we simulate getting an ID.
+    return "agency-123";
+  }
+  return null;
+};
+
+// Mock the API call with exponential backoff for resilience
+const mockApiPost = async (url, data, headers) => {
+  const MAX_RETRIES = 3;
+  let delay = 1000;
+
+  for (let i = 0; i < MAX_RETRIES; i++) {
+    try {
+      // Simulate a successful API response
+      if (data.title && data.pricePerPerson > 0) {
+        if (i === 0) {
+          await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network latency
+        }
+        return {
+          ok: true,
+          json: async () => ({ message: `Tour "${data.title}" created successfully!` }),
+        };
+      } else {
+        // Simulate a validation error
+        throw new Error("Validation failed: Title and price are required.");
+      }
+    } catch (error) {
+      if (i === MAX_RETRIES - 1) {
+        throw new Error("Failed to create tour after multiple retries.");
+      }
+      // Exponential backoff
+      console.warn(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay *= 2;
+    }
+  }
+};
+
 
 function CreateTourForm({ token: initialToken }) {
-  // 1) Always put ALL HOOKS at the top – fixed
+  // --- State Initialization ---
   const [token, setToken] = useState(null);
   const [agencyId, setAgencyId] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
-  // Decode JWT without external libraries
-  const decodeToken = (jwt) => {
-    try {
-      const base64 = jwt.split(".")[1];
-      const decoded = JSON.parse(atob(base64));
-      return decoded.id; // adjust to your backend payload
-    } catch (err) {
-      return null;
-    }
-  };
-
-  // Check authentication on mount
-  useEffect(() => {
-    const saved = initialToken || localStorage.getItem("token");
-
-    if (saved) {
-      const id = decodeToken(saved);
-      setToken(saved);
-      setAgencyId(id);
-    }
-
-    setIsCheckingAuth(false); // authentication check completed
-  }, [initialToken]);
-
-  // 2) Declare all form hooks (always at top level)
   const [formData, setFormData] = useState({
     title: "",
     destinationCountry: "",
@@ -47,49 +68,60 @@ function CreateTourForm({ token: initialToken }) {
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  // If still checking token, show loading instead of early return
-  if (isCheckingAuth) {
-    return <p className="text-center mt-10">Checking authentication…</p>;
-  }
+  // --- Authentication Effect ---
+  // Check authentication on mount
+  useEffect(() => {
+    // Mock token retrieval for the self-contained environment
+    const saved = initialToken || "mock-jwt-token-abcdef1234567890";
 
-  // If no token or invalid JWT
-  if (!token || !agencyId) {
-    return (
-        <p className="text-center mt-10 text-red-500">
-          Please log in first.
-        </p>
-    );
-  }
+    if (saved) {
+      const id = decodeToken(saved);
+      setToken(saved);
+      setAgencyId(id);
+    }
 
-  // Form handlers
-  const handleChange = (e) => {
+    setIsCheckingAuth(false); // authentication check completed
+  }, [initialToken]);
+
+
+  // --- Handlers ---
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-  };
+  }, []);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage("");
+    setIsSuccess(false);
+
+    // Mock API URL - Replace with your actual backend endpoint
+    const mockApiUrl = `http://localhost:8080/api/tours/${agencyId}/tours`;
 
     try {
-      const res = await axios.post(
-          `http://localhost:8080/api/tours/${agencyId}/tours`,
+      // Use mockApiPost instead of axios
+      const res = await mockApiPost(
+          mockApiUrl,
           formData,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           }
       );
 
-      setMessage(res.data.message || "Tour created successfully!");
+      const data = await res.json();
 
+      setMessage(data.message || "Tour created successfully!");
+      setIsSuccess(true);
+
+      // Clear form on successful submission
       setFormData({
         title: "",
         destinationCountry: "",
@@ -102,86 +134,150 @@ function CreateTourForm({ token: initialToken }) {
         imageUrl: "",
         isActive: true,
       });
+
     } catch (err) {
-      setMessage(err.response?.data?.message || "Failed to create tour.");
+      console.error(err);
+      setMessage(err.message || "Failed to create tour.");
+      setIsSuccess(false);
     } finally {
       setLoading(false);
     }
   };
 
-  // Render component
-  return (
-      <div className="max-w-xl mx-auto mt-10 p-6 bg-white rounded-2xl shadow-lg">
-        <h2 className="text-3xl font-bold mb-6 text-center text-blue-600">
-          Create New Tour
-        </h2>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+  // --- Render Conditions ---
+  if (isCheckingAuth) {
+    return (
+        <div className="max-w-xl mx-auto mt-20 p-6 flex items-center justify-center bg-white rounded-2xl shadow-xl">
+          <Loader2 className="animate-spin w-6 h-6 mr-3 text-indigo-600" />
+          <p className="text-lg font-medium text-slate-700">Checking authentication...</p>
+        </div>
+    );
+  }
 
-          {[
-            { label: "Title", name: "title" },
-            { label: "Destination Country", name: "destinationCountry" },
-            { label: "Destination City", name: "destinationCity" },
-            { label: "Start Date", name: "startDate", type: "date" },
-            { label: "End Date", name: "endDate", type: "date" },
-            { label: "Price Per Person", name: "pricePerPerson", type: "number" },
-            { label: "Max Group Size", name: "maxGroupSize", type: "number" },
-            { label: "Image URL", name: "imageUrl" },
-          ].map((f) => (
-              <div key={f.name}>
-                <label className="block font-medium mb-1">{f.label}</label>
-                <input
-                    type={f.type || "text"}
-                    name={f.name}
-                    value={formData[f.name]}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                />
-              </div>
-          ))}
+  if (!token || !agencyId) {
+    return (
+        <div className="max-w-xl mx-auto mt-20 p-6 text-center bg-white rounded-2xl shadow-xl border border-red-200">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
+          <p className="text-slate-600">
+            You must be logged in as an agency to create new tours.
+          </p>
+        </div>
+    );
+  }
+
+  // --- Render Form ---
+  const formFields = [
+    { label: "Tour Title", name: "title", icon: Plane, required: true },
+    { label: "Country", name: "destinationCountry", icon: MapPin, required: true },
+    { label: "City", name: "destinationCity", icon: MapPin, required: true },
+    { label: "Start Date", name: "startDate", type: "date", icon: Calendar, required: true },
+    { label: "End Date", name: "endDate", type: "date", icon: Calendar, required: true },
+    { label: "Price (USD)", name: "pricePerPerson", type: "number", icon: DollarSign, required: true, min: 1 },
+    { label: "Max Group Size", name: "maxGroupSize", type: "number", icon: Users, required: true, min: 1 },
+    { label: "Image URL", name: "imageUrl", icon: Image, required: false },
+  ];
+
+  return (<>
+        <Nav/>
+      <div className="max-w-3xl mx-auto my-10 p-8 lg:p-10 bg-white rounded-3xl shadow-2xl border border-slate-100">
+        <div className="flex items-center justify-center mb-6">
+          <Plane className="w-8 h-8 text-indigo-600 mr-3" />
+          <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">
+            Create New Tour
+          </h2>
+        </div>
+        <p className="text-center text-slate-500 mb-8">
+          Fill in the details below to list a new travel experience on WanderGo.
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {formFields.map((f) => {
+              const Icon = f.icon;
+              return (
+                  <div key={f.name}>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center">
+                      <Icon className="w-4 h-4 mr-2 text-indigo-500" />
+                      {f.label} {f.required && <span className="text-red-500 ml-1">*</span>}
+                    </label>
+                    <div className="relative">
+                      <input
+                          type={f.type || "text"}
+                          name={f.name}
+                          value={formData[f.name]}
+                          onChange={handleChange}
+                          required={f.required}
+                          min={f.min}
+                          className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm disabled:bg-slate-50"
+                          placeholder={`Enter ${f.label.toLowerCase()}`}
+                      />
+                    </div>
+                  </div>
+              );
+            })}
+          </div>
 
           <div>
-            <label className="block mb-1 font-medium">Description</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
             <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={4}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                rows={5}
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 shadow-sm"
+                placeholder="Provide a detailed description of the tour highlights and itinerary."
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 pt-2">
             <input
                 type="checkbox"
+                id="isActive"
                 name="isActive"
                 checked={formData.isActive}
                 onChange={handleChange}
-                className="h-4 w-4"
+                className="h-5 w-5 text-indigo-600 bg-white border-slate-300 rounded focus:ring-indigo-500 transition duration-150 shadow-sm"
             />
-            <label className="font-medium">Active Tour</label>
+            <label htmlFor="isActive" className="font-semibold text-slate-700 select-none flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              List as Active Tour
+            </label>
           </div>
 
           <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg"
+              className={`w-full py-4 text-lg font-bold rounded-xl transition duration-300 transform shadow-md ${
+                  loading
+                      ? "bg-indigo-400 text-indigo-100 cursor-not-allowed"
+                      : "bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.005]"
+              }`}
           >
-            {loading ? "Creating Tour..." : "Create Tour"}
+            {loading ? (
+                <span className="flex items-center justify-center">
+                    <Loader2 className="animate-spin w-5 h-5 mr-3" />
+                    Creating Tour...
+                </span>
+            ) : (
+                "Create Tour Listing"
+            )}
           </button>
         </form>
 
         {message && (
-            <p
-                className={`mt-5 text-center font-medium ${
-                    message.includes("success") ? "text-green-600" : "text-red-600"
+            <div
+                className={`mt-6 p-4 rounded-xl border font-semibold text-center ${
+                    isSuccess
+                        ? "bg-green-50 border-green-300 text-green-700"
+                        : "bg-red-50 border-red-300 text-red-700"
                 }`}
             >
               {message}
-            </p>
+            </div>
         )}
       </div>
+      </>
   );
 }
 

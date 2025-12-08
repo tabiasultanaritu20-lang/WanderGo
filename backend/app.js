@@ -10,7 +10,7 @@ require('dotenv').config();
 // -------------------------------
 // CORS setup
 app.use(cors({
-    origin: "http://localhost:5173", // frontend URL
+    origin: "*", // frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
 }));

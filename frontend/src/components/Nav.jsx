@@ -15,8 +15,8 @@ function Nav({ cartCount }) {
                 {/* Center Nav Links - Hidden on small screens */}
                 <div className="hidden lg:flex items-center gap-6">
                     <Link to="/dashboard" className="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">Home</Link>
-                    <a href="#" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Agency</a>
-                    <a href="#" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">My Bookings</a>
+                    <Link to="/create-tour" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Agency</Link>
+                    <Link to="/EmergencyHub" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Emergency Hub</Link>
                     <a href="#" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Profile</a>
                     <Link to="/blog" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition">Blog</Link>
                 </div>
