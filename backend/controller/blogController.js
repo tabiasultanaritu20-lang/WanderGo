@@ -1,96 +1,208 @@
-// backend/controller/blogController.js
-const Blog = require('../model/Blog');
+const Blog = require("../model/Blog");
+const mongoose = require("mongoose");
 
-// GET /api/blogs?category=...&location=...&page=1&limit=5
+// helpers
+const getUserId = (req) =>
+  req.user?.id || req.user?._id || req.user?.playLoad?.id || null;
+
+const getUserName = (req) =>
+  req.user?.name || req.user?.playLoad?.name || "Traveler";
+
+// GET /api/blogs
 exports.getBlogs = async (req, res) => {
   try {
-    const { category, location, page = 1, limit = 5 } = req.query;
+    const { category, location } = req.query;
 
     const filter = {};
     if (category) filter.categories = category;
     if (location) filter.location = location;
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const blogs = await Blog.find(filter).sort({ createdAt: -1 });
 
-    const [blogs, total] = await Promise.all([
-      Blog.find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit)),
-      Blog.countDocuments(filter),
-    ]);
-
-    res.json({
-      data: blogs,
-      total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-    });
+    res.json({ data: blogs });
   } catch (err) {
-    console.error('Error fetching blogs:', err);
-    res.status(500).json({ message: 'Server error while fetching blogs' });
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching blogs" });
   }
 };
 
-// POST /api/blogs -> create a new blog post
+// GET /api/blogs/:id
+exports.getBlogById = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    res.json({ data: blog });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while fetching blog" });
+  }
+};
+
+// POST /api/blogs
 exports.createBlog = async (req, res) => {
   try {
-    const blog = await Blog.create(req.body);
+    const { title, content, authorName, location, categories } = req.body;
 
-    res.status(201).json({
-      message: 'Blog created',
-      data: blog,
+    const categoriesArr = categories
+      ? categories.split(",").map((c) => c.trim()).filter(Boolean)
+      : [];
+
+    const coverImageUrl = req.file ? `/uploads/${req.file.filename}` : "";
+
+    const blog = await Blog.create({
+      title,
+      content,
+      authorName: authorName?.trim() || "Anonymous Traveler",
+      location: location?.trim() || "Unknown",
+      categories: categoriesArr,
+      coverImageUrl,
     });
+
+    res.status(201).json({ message: "Blog created", data: blog });
   } catch (err) {
-    console.error('Error creating blog:', err);
-    res
-      .status(500)
-      .json({ message: 'Server error while creating blog', error: err.message });
+    console.error(err);
+    res.status(500).json({ message: "Server error while creating blog" });
   }
 };
 
-// POST /api/blogs/seed -> insert some starter blogs (used earlier)
-exports.seedBlogs = async (req, res) => {
+// PUT /api/blogs/:id
+exports.updateBlog = async (req, res) => {
   try {
-    const existing = await Blog.countDocuments();
-    if (existing > 0) {
-      return res.status(400).json({ message: 'Blogs already seeded' });
+    const { title, content, authorName, location, categories } = req.body;
+
+    const update = {};
+    if (title !== undefined) update.title = title;
+    if (content !== undefined) update.content = content;
+    if (authorName !== undefined)
+      update.authorName = authorName?.trim() || "Anonymous Traveler";
+    if (location !== undefined)
+      update.location = location?.trim() || "Unknown";
+
+    if (categories !== undefined) {
+      update.categories = typeof categories === "string"
+        ? categories.split(",").map((c) => c.trim()).filter(Boolean)
+        : categories;
     }
 
-    const seedData = [
-      {
-        title: 'A Rainy Day in Cox’s Bazar',
-        body:
-          'Spent the whole day walking on the beach with hot tea and street food. The waves were wild but the vibe was peaceful...',
-        authorName: 'Tabia S.',
-        location: 'Cox’s Bazar, Bangladesh',
-        categories: ['Beach', 'Relax'],
-        tags: ['Cox’s Bazar', 'Rain', 'Chill'],
-      },
-      {
-        title: 'Budget Backpacking in Nepal',
-        body:
-          'Took local buses, stayed in homestays, and still managed to see incredible mountain views. Sharing my exact budget and route...',
-        authorName: 'Ishaq A.',
-        location: 'Pokhara, Nepal',
-        categories: ['Adventure', 'Backpacking'],
-        tags: ['Nepal', 'Budget', 'Trekking'],
-      },
-      {
-        title: 'Dhaka Night Street Food Crawl',
-        body:
-          'From fuchka to tehari – here’s my mini guide to doing a safe but fun night food crawl in Dhaka with friends...',
-        authorName: 'WanderGo Team',
-        location: 'Dhaka, Bangladesh',
-        categories: ['Food', 'City Life'],
-        tags: ['Dhaka', 'Street Food'],
-      },
-    ];
+    if (req.file) {
+      update.coverImageUrl = `/uploads/${req.file.filename}`;
+    }
 
-    const blogs = await Blog.insertMany(seedData);
-    res.status(201).json({ message: 'Seeded blogs', data: blogs });
+    const blog = await Blog.findByIdAndUpdate(req.params.id, update, {
+      new: true,
+    });
+
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    res.json({ message: "Blog updated", data: blog });
   } catch (err) {
-    console.error('Error seeding blogs:', err);
-    res.status(500).json({ message: 'Server error while seeding blogs' });
+    console.error(err);
+    res.status(500).json({ message: "Server error while updating blog" });
+  }
+};
+
+// DELETE /api/blogs/:id
+exports.deleteBlog = async (req, res) => {
+  try {
+    const blog = await Blog.findByIdAndDelete(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    res.json({ message: "Blog deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while deleting blog" });
+  }
+};
+
+// POST /api/blogs/:id/like
+exports.toggleLike = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    const idx = blog.likes.findIndex(
+      (id) => id.toString() === userId.toString()
+    );
+
+    if (idx === -1) blog.likes.push(new mongoose.Types.ObjectId(userId));
+    else blog.likes.splice(idx, 1);
+
+    await blog.save();
+    res.json({ data: blog, likesCount: blog.likes.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while liking blog" });
+  }
+};
+
+// POST /api/blogs/:id/comments
+exports.addComment = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const { text } = req.body;
+    if (!text || !text.trim())
+      return res.status(400).json({ message: "Comment required" });
+
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    const comment = {
+      user: userId,
+      name: getUserName(req),
+      text: text.trim(),
+    };
+
+    blog.comments.push(comment);
+    await blog.save();
+
+    res.status(201).json({ data: blog.comments.at(-1) });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while adding comment" });
+  }
+};
+
+// DELETE /api/blogs/:id/comments/:commentId
+exports.deleteComment = async (req, res) => {
+  try {
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    blog.comments = blog.comments.filter(
+      (c) => c._id.toString() !== req.params.commentId
+    );
+
+    await blog.save();
+    res.json({ message: "Comment deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while deleting comment" });
+  }
+};
+
+// POST /api/blogs/:id/share
+exports.shareBlog = async (req, res) => {
+  try {
+    const userId = getUserId(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: "Blog not found" });
+
+    if (!blog.shares.includes(userId)) {
+      blog.shares.push(new mongoose.Types.ObjectId(userId));
+      await blog.save();
+    }
+
+    res.json({ sharesCount: blog.shares.length });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error while sharing blog" });
   }
 };

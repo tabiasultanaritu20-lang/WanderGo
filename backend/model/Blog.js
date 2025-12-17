@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const blogSchema = new mongoose.Schema(
   {
@@ -7,47 +7,58 @@ const blogSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+
     content: {
       type: String,
       required: true,
     },
+
     authorName: {
       type: String,
-      required: true,
-      default: 'Anonymous Traveler',
+      default: "Anonymous Traveler",
+      trim: true,
     },
+
     location: {
       type: String,
-      default: 'Unknown',
+      default: "Unknown",
+      trim: true,
     },
+
     categories: {
       type: [String],
       default: [],
     },
+
     coverImageUrl: {
       type: String,
-      default:
-        'https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg',
+      default: "",
     },
-    // For future features
+
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
       },
     ],
+
     comments: [
       {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-        name: String,
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        name: { type: String, default: "Traveler" },
         text: String,
         createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    shares: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
       },
     ],
   },
   { timestamps: true }
 );
 
-const Blog = mongoose.model('Blog', blogSchema);
-
-module.exports = Blog;
+module.exports = mongoose.model("Blog", blogSchema);

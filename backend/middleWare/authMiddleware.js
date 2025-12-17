@@ -1,35 +1,33 @@
-const jwt=require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "No token" });
+  const token = req.headers.authorization?.split(" ")[1];
+  if (!token) return res.status(401).json({ message: "No token" });
 
-    try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
-        next();
-    } catch (err) {
-        res.status(403).json({ message: err.message });
-    }
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    return res.status(403).json({ message: err.message });
+  }
 };
 
-
 const adminOnly = (req, res, next) => {
-    if (req.user.playLoad.role !== "admin") {
-        return res.status(403).json({ message: "Access denied. Admin only." });
-    }
-    next();
+  const role = req.user?.playLoad?.role || req.user?.role;
+  if (role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Admin only." });
+  }
+  next();
 };
 
 const Agency_And_Admin = (req, res, next) => {
-    const role = req.user.playLoad.role;
-
-    if (role !== "agency" && role !== "admin") {
-        return res.status(403).json({ message: "Access denied. Admin and Agency only." });
-    }
-
-    next();
+  const role = req.user?.playLoad?.role || req.user?.role;
+  if (role !== "agency" && role !== "admin") {
+    return res
+      .status(403)
+      .json({ message: "Access denied. Admin and Agency only." });
+  }
+  next();
 };
 
-
-
-module.exports = {authMiddleware, Agency_And_Admin,adminOnly};
+module.exports = { authMiddleware, Agency_And_Admin, adminOnly };
