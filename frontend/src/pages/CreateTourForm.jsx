@@ -13,7 +13,7 @@ function CreateTourForm({ token: initialToken }) {
       const base64 = jwt.split(".")[1];
       const decoded = JSON.parse(atob(base64));
       return decoded.id; // adjust to your backend payload
-    } catch (err) {
+    } catch {
       return null;
     }
   };

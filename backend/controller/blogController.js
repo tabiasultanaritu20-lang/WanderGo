@@ -60,7 +60,7 @@ exports.seedBlogs = async (req, res) => {
     const seedData = [
       {
         title: 'A Rainy Day in Cox’s Bazar',
-        body:
+        content:
           'Spent the whole day walking on the beach with hot tea and street food. The waves were wild but the vibe was peaceful...',
         authorName: 'Tabia S.',
         location: 'Cox’s Bazar, Bangladesh',
@@ -69,7 +69,7 @@ exports.seedBlogs = async (req, res) => {
       },
       {
         title: 'Budget Backpacking in Nepal',
-        body:
+        content:
           'Took local buses, stayed in homestays, and still managed to see incredible mountain views. Sharing my exact budget and route...',
         authorName: 'Ishaq A.',
         location: 'Pokhara, Nepal',
@@ -78,7 +78,7 @@ exports.seedBlogs = async (req, res) => {
       },
       {
         title: 'Dhaka Night Street Food Crawl',
-        body:
+        content:
           'From fuchka to tehari – here’s my mini guide to doing a safe but fun night food crawl in Dhaka with friends...',
         authorName: 'WanderGo Team',
         location: 'Dhaka, Bangladesh',
@@ -92,5 +92,45 @@ exports.seedBlogs = async (req, res) => {
   } catch (err) {
     console.error('Error seeding blogs:', err);
     res.status(500).json({ message: 'Server error while seeding blogs' });
+  }
+};
+
+exports.ensureSeeded = async () => {
+  try {
+    const existing = await Blog.countDocuments();
+    if (existing > 0) return;
+    const seedData = [
+      {
+        title: 'A Rainy Day in Cox’s Bazar',
+        content:
+          'Spent the whole day walking on the beach with hot tea and street food. The waves were wild but the vibe was peaceful...',
+        authorName: 'Tabia S.',
+        location: 'Cox’s Bazar, Bangladesh',
+        categories: ['Beach', 'Relax'],
+        tags: ['Cox’s Bazar', 'Rain', 'Chill'],
+      },
+      {
+        title: 'Budget Backpacking in Nepal',
+        content:
+          'Took local buses, stayed in homestays, and still managed to see incredible mountain views. Sharing my exact budget and route...',
+        authorName: 'Ishaq A.',
+        location: 'Pokhara, Nepal',
+        categories: ['Adventure', 'Backpacking'],
+        tags: ['Nepal', 'Budget', 'Trekking'],
+      },
+      {
+        title: 'Dhaka Night Street Food Crawl',
+        content:
+          'From fuchka to tehari – here’s my mini guide to doing a safe but fun night food crawl in Dhaka with friends...',
+        authorName: 'WanderGo Team',
+        location: 'Dhaka, Bangladesh',
+        categories: ['Food', 'City Life'],
+        tags: ['Dhaka', 'Street Food'],
+      },
+    ];
+    await Blog.insertMany(seedData);
+    console.log('Seeded default blogs');
+  } catch (err) {
+    console.error('ensureSeeded blogs failed:', err.message);
   }
 };

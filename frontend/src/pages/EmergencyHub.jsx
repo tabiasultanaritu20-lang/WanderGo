@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import NavTabs from "../components/NavTabs"
 
 const API = "http://localhost:8080"
 
@@ -119,10 +118,9 @@ export default function EmergencyHub() {
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
-      <NavTabs />
       <div className="relative max-w-6xl mx-auto p-4">
-        <h1 className="text-2xl font-semibold">Safety & Emergency Hub</h1>
-        <p className="text-slate-600 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>
+        <h1 className="text-2xl font-semibold text-white">Safety & Emergency Hub</h1>
+        <p className="text-white/90 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>
         <div
           className="mt-6 w-full md:sticky md:top-24 md:z-30 rounded-2xl p-4 backdrop-blur-md bg-white/60 border border-slate-200/30 transition-shadow duration-300"
           style={{

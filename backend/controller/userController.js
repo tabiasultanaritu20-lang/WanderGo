@@ -5,7 +5,7 @@ const jwt = require( "jsonwebtoken");
 
 const registerUser = async (req, res) => {
     try {
-        let { name, email, password, number, country, role, adminKey } = req.body;
+        let { name, email, password, number, country, role } = req.body;
 
         //  1. Check if all required fields exist
         if (!name || !email || !password || !number || !country || !role) {
@@ -16,9 +16,6 @@ const registerUser = async (req, res) => {
 
 // handle admin role
         if (requestedRole === "admin") {
-            if (adminKey !== process.env.ADMIN_ROLE) {
-                return res.status(403).json({ message: "Not allowed to create admin user" });
-            }
             role = "admin";
         }
 

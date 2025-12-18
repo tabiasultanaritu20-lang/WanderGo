@@ -1,13 +1,29 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import Input from '../components/Input.jsx';
 
 function Dashboard() {
     const [sortBy, setSortBy] = useState('price');
     const [sortOrder, setSortOrder] = useState('asc');
     const [cartCount, setCartCount] = useState(0);
+    const [priceMax, setPriceMax] = useState(3000);
+    const [durationFilter, setDurationFilter] = useState('Any duration');
+    const [showAdd, setShowAdd] = useState(false);
+    const [newPkg, setNewPkg] = useState({ title: '', destinationCountry: '', destinationCity: '', price: '', imageUrl: '', features: '', duration: '', date: '' });
+    const [userPackages, setUserPackages] = useState([]);
+    const [tagFilters, setTagFilters] = useState({});
+    const ratePackage = (id, r) => {
+      setUserPackages((u) => u.map((p) => {
+        if (p._id !== id) return p
+        const count = Number(p.ratingCount || 0)
+        const avg = Number(p.ratingAvg || 0)
+        const newAvg = (avg * count + r) / (count + 1)
+        return { ...p, ratingAvg: newAvg, ratingCount: count + 1 }
+      }))
+    }
 
     // Demo tours data
-    const [tours] = useState([
+    const [tours, setTours] = useState([
         {
             id: 1,
             title: 'Paris Adventure',
@@ -16,7 +32,8 @@ function Dashboard() {
             date: '2024-06-15',
             imageUrl: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400',
             rating: 4.5,
-            duration: '5 days'
+            duration: '5 days',
+            type: 'Cultural'
         },
         {
             id: 2,
@@ -26,7 +43,8 @@ function Dashboard() {
             date: '2024-07-01',
             imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400',
             rating: 4.8,
-            duration: '7 days'
+            duration: '7 days',
+            type: 'Adventure'
         },
         {
             id: 3,
@@ -36,11 +54,43 @@ function Dashboard() {
             date: '2024-05-20',
             imageUrl: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400',
             rating: 4.6,
-            duration: '6 days'
+            duration: '6 days',
+            type: 'Beach'
         }
     ]);
 
-    const sortedTours = [...tours].sort((a, b) => {
+    const BASE_TYPES = ['Adventure','Cultural','Beach']
+    const dynamicTags = Array.from(new Set(
+      userPackages.flatMap((p) => Array.isArray(p.features) ? p.features : [])
+    ));
+    const mergedTags = Array.from(new Set([...BASE_TYPES, ...dynamicTags]))
+
+    const selectedFeatureTags = Object.entries(tagFilters).filter(([,v])=>!!v).map(([k])=>k);
+
+    const filteredTours = tours.filter((t) => {
+        const priceOk = t.price <= Number(priceMax || 0) || Number(priceMax || 0) === 0 ? true : t.price <= Number(priceMax);
+        const days = parseInt(String(t.duration).replace(/[^0-9]/g, '')) || 0;
+        let durationOk = true;
+        if (durationFilter === '1-3 days') durationOk = days >= 1 && days <= 3;
+        else if (durationFilter === '4-7 days') durationOk = days >= 4 && days <= 7;
+        else if (durationFilter === '7+ days') durationOk = days >= 7;
+        const tagOk = selectedFeatureTags.length === 0 ? true : selectedFeatureTags.includes(t.type);
+        return priceOk && durationOk && tagOk;
+    });
+
+    const filteredPkgs = userPackages.filter((p)=>{
+        const priceOk = Number(p.price||0) <= Number(priceMax||0) || Number(priceMax||0)===0 ? true : Number(p.price||0) <= Number(priceMax);
+        const days = parseInt(String(p.duration||'').replace(/[^0-9]/g,'')) || 0;
+        let durationOk = true;
+        if (durationFilter === '1-3 days') durationOk = days >=1 && days <=3;
+        else if (durationFilter === '4-7 days') durationOk = days >=4 && days <=7;
+        else if (durationFilter === '7+ days') durationOk = days >=7;
+        const tags = Array.isArray(p.features) ? p.features : [];
+        const tagsOk = selectedFeatureTags.length===0 ? true : selectedFeatureTags.every((ft)=> tags.includes(ft));
+        return priceOk && durationOk && tagsOk;
+    });
+
+  const sortedTours = [...filteredTours].sort((a, b) => {
         let comparison = 0;
         if (sortBy === 'price') {
             comparison = a.price - b.price;
@@ -50,12 +100,53 @@ function Dashboard() {
             comparison = new Date(a.date) - new Date(b.date);
         }
         return sortOrder === 'asc' ? comparison : -comparison;
-    });
+  });
+
+  const displayCards = [
+    ...sortedTours.map((t) => ({
+      kind: 'tour',
+      id: t.id,
+      title: t.title,
+      imageUrl: t.imageUrl,
+      price: t.price,
+      city: t.location.split(',')[0] || '',
+      country: (t.location.split(',')[1] || '').trim(),
+      duration: t.duration,
+      rating: t.rating,
+    })),
+    ...filteredPkgs.map((p) => ({
+      kind: 'pkg',
+      id: p._id,
+      title: p.title,
+      imageUrl: p.imageUrl,
+      price: p.price,
+      city: p.destinationCity,
+      country: p.destinationCountry,
+      features: Array.isArray(p.features) ? p.features : [],
+      duration: p.duration || '',
+      date: p.date || '',
+      ratingAvg: p.ratingAvg || 0,
+      ratingCount: p.ratingCount || 0,
+    })),
+  ].sort((a,b)=>{
+    if (sortBy === 'price') return (a.price||0) - (b.price||0);
+    if (sortBy === 'location') return String(a.city||'').localeCompare(String(b.city||''));
+    if (sortBy === 'date') return new Date(a.date||0) - new Date(b.date||0);
+    return 0;
+  })
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="relative min-h-screen">
+            <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                    backgroundImage:
+                        "url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1260')",
+                }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
             {/* Top Navbar */}
-            <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+            <nav className="hidden">
                 <div className="flex items-center justify-between px-6 py-4">
                     {/* Logo */}
                     <div className="flex items-center gap-2">
@@ -87,9 +178,9 @@ function Dashboard() {
                 </div>
             </nav>
 
-            <div className="flex">
+            <div className="relative max-w-10xl mx-auto px-9 flex gap-10">
                 {/* Left Sidebar */}
-                <aside className="hidden lg:block w-64 bg-white border-r border-slate-200 min-h-[calc(100vh-73px)] p-6">
+                <aside className="hidden lg:block w-60 bg-white/75 backdrop-blur-md border-r border-slate-200/60 min-h-[calc(50vh-73px)] p-4 rounded-xl">
                     <div className="space-y-6">
                         {/* Filters Section */}
                         <div>
@@ -97,40 +188,41 @@ function Dashboard() {
                             <div className="space-y-3">
                                 <div>
                                     <label className="text-xs font-medium text-slate-600 block mb-1">Price Range</label>
-                                    <input type="range" min="0" max="3000" className="w-full" />
-                                    <div className="flex justify-between text-xs text-slate-500 mt-1">
-                                        <span>$0</span>
-                                        <span>$3000</span>
+                                        <input type="range" min="0" max="3000" value={priceMax} onChange={(e)=>setPriceMax(Number(e.target.value))} className="w-full" />
+                                        <div className="flex justify-between text-xs text-slate-500 mt-1">
+                                            <span>$0</span>
+                                            <span>${priceMax}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 block mb-1">Duration</label>
-                                    <select className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-slate-900/10">
-                                        <option>Any duration</option>
-                                        <option>1-3 days</option>
-                                        <option>4-7 days</option>
-                                        <option>7+ days</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 block mb-2">Tour Type</label>
-                                    <div className="space-y-2">
-                                        <label className="flex items-center text-sm text-slate-700">
-                                            <input type="checkbox" className="mr-2 rounded" />
-                                            Adventure
-                                        </label>
-                                        <label className="flex items-center text-sm text-slate-700">
-                                            <input type="checkbox" className="mr-2 rounded" />
-                                            Cultural
-                                        </label>
-                                        <label className="flex items-center text-sm text-slate-700">
-                                            <input type="checkbox" className="mr-2 rounded" />
-                                            Beach
-                                        </label>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 block mb-1">Duration</label>
+                                        <select value={durationFilter} onChange={(e)=>setDurationFilter(e.target.value)} className="w-full text-sm border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-slate-900/10">
+                                            <option value="Any duration">Any duration</option>
+                                            <option value="1-3 days">1-3 days</option>
+                                            <option value="4-7 days">4-7 days</option>
+                                            <option value="7+ days">7+ days</option>
+                                        </select>
                                     </div>
-                                </div>
-                            </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 block mb-2">Tags</label>
+                                        <div className="space-y-2">
+                                          {mergedTags.map((tg)=> (
+                                            <label key={tg} className="flex items-center text-sm text-slate-700">
+                                              <input
+                                                type="checkbox"
+                                                checked={!!tagFilters[tg]}
+                                                onChange={()=> setTagFilters((prev)=> ({ ...prev, [tg]: !prev[tg] }))}
+                                                className="mr-2 rounded"
+                                              />
+                                              {tg}
+                                            </label>
+                                          ))}
+                                        </div>
+                                    </div>
                         </div>
+                    </div>
+
+                    
 
                         {/* Quick Links */}
                         <div className="pt-6 border-t border-slate-200">
@@ -156,7 +248,7 @@ function Dashboard() {
                 {/* Main Content */}
                 <main className="flex-1 p-6">
                     {/* Sort Options */}
-                    <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex flex-wrap items-center gap-4">
+                    <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6 flex flex-wrap items-center gap-4">
                         <span className="text-sm font-medium text-slate-700">Sort by:</span>
                         <select
                             value={sortBy}
@@ -174,60 +266,152 @@ function Dashboard() {
                             {sortOrder === 'asc' ? '↑ Ascending' : '↓ Descending'}
                         </button>
                         <span className="ml-auto text-sm text-slate-500">{tours.length} tours found</span>
+                        <button onClick={() => setShowAdd(v=>!v)} className="ml-4 px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Add package</button>
                     </div>
 
-                    {/* Tour Cards Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {sortedTours.map((tour) => (
-                            <div key={tour.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition group">
-                                <div className="relative h-48 overflow-hidden">
-                                    <img src={tour.imageUrl} alt={tour.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                                    <button className="absolute top-3 right-3 p-2 bg-white/90 rounded-full hover:bg-white transition">
-                                        <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                        </svg>
-                                    </button>
+                    {showAdd && (
+                      <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <Input label="Title" name="title" value={newPkg.title} onChange={(e)=>setNewPkg({...newPkg, title:e.target.value})} />
+                          <Input label="Country" name="destinationCountry" value={newPkg.destinationCountry} onChange={(e)=>setNewPkg({...newPkg, destinationCountry:e.target.value})} />
+                          <Input label="City" name="destinationCity" value={newPkg.destinationCity} onChange={(e)=>setNewPkg({...newPkg, destinationCity:e.target.value})} />
+                          <Input label="Price" name="price" type="number" value={newPkg.price} onChange={(e)=>setNewPkg({...newPkg, price:e.target.value})} />
+                          <Input label="Image URL" name="imageUrl" value={newPkg.imageUrl} onChange={(e)=>setNewPkg({...newPkg, imageUrl:e.target.value})} />
+                          <Input label="Features (comma)" name="features" value={newPkg.features} onChange={(e)=>setNewPkg({...newPkg, features:e.target.value})} />
+                          <Input label="Duration (e.g. 5 days)" name="duration" value={newPkg.duration} onChange={(e)=>setNewPkg({...newPkg, duration:e.target.value})} />
+                          <Input label="Start date" name="date" type="date" value={newPkg.date} onChange={(e)=>setNewPkg({...newPkg, date:e.target.value})} />
+                          <div className="md:col-span-3 flex justify-end gap-3">
+                            <button onClick={()=>setShowAdd(false)} className="px-3 py-2 rounded-lg border border-slate-300 text-sm">Cancel</button>
+                            <button
+                              onClick={async ()=>{
+                                const body = {
+                                  title: newPkg.title,
+                                  destinationCountry: newPkg.destinationCountry,
+                                  destinationCity: newPkg.destinationCity,
+                                  price: Number(newPkg.price || 0),
+                                  imageUrl: newPkg.imageUrl,
+                                  features: String(newPkg.features||'').split(',').map(s=>s.trim()).filter(Boolean),
+                                  duration: newPkg.duration,
+                                  date: newPkg.date
+                                }
+                                try {
+                                  const r = await fetch('http://localhost:8080/api/packages', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
+                                  const j = await r.json()
+                                  const created = { ratingAvg:0, ratingCount:0, ...(j.data || body) }
+                                  setUserPackages(u=>[{ _id: Date.now(), ...created }, ...u])
+                                  setShowAdd(false)
+                                  setNewPkg({ title: '', destinationCountry: '', destinationCity: '', price: '', imageUrl: '', features: '', duration:'', date:'' })
+                                } catch (e) { console.error(e) }
+                              }}
+                              className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm"
+                            >Save</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cards Grid (tours + user packages) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+                      {displayCards.map((card) => (
+                        <div key={`${card.kind}-${card.id}`} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition group">
+                          <div className="relative h-56 overflow-hidden">
+                            {card.imageUrl && (
+                              <img src={card.imageUrl} alt={card.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                            )}
+                            <button
+                              onClick={async () => {
+                                try {
+                                  if (card.kind === 'pkg') {
+                                    await fetch(`http://localhost:8080/api/packages/${card.id}`, { method: 'DELETE' })
+                                  }
+                                } catch (e) { console.error(e) }
+                                if (card.kind === 'tour') {
+                                  setTours((prev) => prev.filter((t) => t.id !== card.id))
+                                } else {
+                                  setUserPackages((u) => u.filter((p) => p._id !== card.id))
+                                }
+                              }}
+                              className="absolute top-3 right-3 p-2 bg-white/90 rounded-full hover:bg-white transition"
+                              title="Delete"
+                            >
+                              <svg className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="p-7">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs font-medium text-slate-500">{card.city}{card.country ? `, ${card.country}` : ''}</span>
+                              {card.kind === 'tour' && (
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="text-sm font-medium text-slate-700">{card.rating}</span>
                                 </div>
-                                <div className="p-4">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-medium text-slate-500">{tour.location}</span>
-                                        <div className="flex items-center gap-1">
-                                            <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                            <span className="text-sm font-medium text-slate-700">{tour.rating}</span>
-                                        </div>
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-2">{tour.title}</h3>
-                                    <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
-                    <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                        {new Date(tour.date).toLocaleDateString()}
-                    </span>
-                                        <span className="flex items-center gap-1">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                                            {tour.duration}
-                    </span>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                                        <div>
-                                            <span className="text-xs text-slate-500">From</span>
-                                            <p className="text-xl font-bold text-slate-900">${tour.price}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => setCartCount(cartCount + 1)}
-                                            className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition"
-                                        >
-                                            Add to Cart
-                                        </button>
-                                    </div>
+                              )}
+                              {card.kind === 'pkg' && (
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                  <span className="text-sm font-medium text-slate-700">{Math.round((card.ratingAvg||0)*10)/10}</span>
+                                  <span className="text-xs text-slate-500">({card.ratingCount||0})</span>
                                 </div>
+                              )}
                             </div>
-                        ))}
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2">{card.title}</h3>
+                            {(card.kind === 'tour' || card.kind === 'pkg') && (
+                              <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
+                                <span className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  {card.date ? new Date(card.date).toLocaleDateString() : new Date().toLocaleDateString()}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  {card.duration}
+                                </span>
+                              </div>
+                            )}
+                            {card.kind === 'pkg' && card.features && card.features.length > 0 && (
+                              <div className="mb-3 flex flex-wrap gap-2">
+                                {card.features.map((f) => (
+                                  <span key={f} className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">{f}</span>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                              <div>
+                                <span className="text-xs text-slate-500">From</span>
+                                <p className="text-xl font-bold text-slate-900">${card.price}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                {card.kind === 'pkg' && (
+                                  <div className="flex items-center">
+                                    {[1,2,3,4,5].map((n)=> (
+                                      <button key={n} aria-label={`Rate ${n}`} onClick={()=>ratePackage(card.id, n)} className="p-1">
+                                        <svg className={`w-5 h-5 ${n <= Math.round(card.ratingAvg||0) ? 'text-yellow-400' : 'text-slate-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                                <button
+                                  onClick={() => setCartCount(cartCount + 1)}
+                                  className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition"
+                                >
+                                  Add to Cart
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                 </main>
             </div>

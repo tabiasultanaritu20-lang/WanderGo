@@ -12,7 +12,7 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
         number: "",
         country: "Bangladesh",
         role: "user",
-        adminKey: "",
+        
     });
     const [loading, setLoading] = useState(false);
     const [serverError, setServerError] = useState("");
@@ -30,10 +30,8 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
         if (form.password.length < 6) return false;
         if (!/^\+?[0-9\-()\s]{6,}$/.test(form.number)) return false;
         if (!countries.includes(form.country)) return false;
-        // If admin selected, adminKey must be present
-        if (form.role === "admin" && !form.adminKey.trim()) return false;
         return true;
-    }, [form.name, form.email, form.password.length, form.number, form.country, form.role, form.adminKey]);
+    }, [form.name, form.email, form.password.length, form.number, form.country, form.role]);
 
     const onChange = (e) => {
         const { name, value } = e.target;
@@ -230,7 +228,6 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
                                 value={form.adminKey}
                                 onChange={onChange}
                                 placeholder="Enter admin secret"
-                                required
                             />
                         )}
 
