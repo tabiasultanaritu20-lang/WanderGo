@@ -2,61 +2,32 @@ const mongoose = require("mongoose");
 
 const blogSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+    title: { type: String, required: true, trim: true },
+    content: { type: String, required: true },
 
-    content: {
-      type: String,
-      required: true,
-    },
+    // OWNER (this is the key fix)
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    authorName: {
-      type: String,
-      default: "Anonymous Traveler",
-      trim: true,
-    },
+    // display name for UI (optional but useful)
+    authorName: { type: String, default: "Anonymous Traveler" },
 
-    location: {
-      type: String,
-      default: "Unknown",
-      trim: true,
-    },
+    location: { type: String, default: "Unknown" },
+    categories: { type: [String], default: [] },
 
-    categories: {
-      type: [String],
-      default: [],
-    },
+    coverImageUrl: { type: String, default: "" },
 
-    coverImageUrl: {
-      type: String,
-      default: "",
-    },
-
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
     comments: [
       {
         user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-        name: { type: String, default: "Traveler" },
+        name: String,
         text: String,
         createdAt: { type: Date, default: Date.now },
       },
     ],
 
-    shares: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    shares: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
