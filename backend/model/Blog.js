@@ -5,10 +5,10 @@ const blogSchema = new mongoose.Schema(
     title: { type: String, required: true, trim: true },
     content: { type: String, required: true },
 
-    // OWNER (this is the key fix)
+  
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 
-    // display name for UI (optional but useful)
+  
     authorName: { type: String, default: "Anonymous Traveler" },
 
     location: { type: String, default: "Unknown" },

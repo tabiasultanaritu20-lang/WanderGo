@@ -20,13 +20,27 @@ const isOwnerOrAdmin = (blog, userId, role) => {
 };
 
 // GET /api/blogs?category=&location=
+const escapeRegex = (s = "") => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// GET /api/blogs?category=&location=
 exports.getBlogs = async (req, res) => {
   try {
-    const { category, location, page = 1, limit = 10 } = req.query;
+    const { category = "", location = "", page = 1, limit = 10 } = req.query;
 
     const filter = {};
-    if (category) filter.categories = category;
-    if (location) filter.location = location;
+
+    // CATEGORY: partial match, case-insensitive, works with categories array
+    if (category && category.trim()) {
+      const cat = escapeRegex(category.trim());
+      filter.categories = { $elemMatch: { $regex: cat, $options: "i" } };
+    }
+
+    // LOCATION: partial match, case-insensitive
+    // Works if user types only city OR only country OR both
+    if (location && location.trim()) {
+      const loc = escapeRegex(location.trim());
+      filter.location = { $regex: loc, $options: "i" };
+    }
 
     const skip = (Number(page) - 1) * Number(limit);
 
