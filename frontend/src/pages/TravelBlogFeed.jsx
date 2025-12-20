@@ -25,6 +25,10 @@ const TravelBlogFeed = () => {
     return [];
   };
 
+  // Store initial unique options so they don't disappear when we filter the list
+  const [filterOptions, setFilterOptions] = useState({ categories: [], locations: [] });
+  const isInitialLoad = useRef(true);
+
   const fetchBlogs = async () => {
     try {
       setLoading(true);
