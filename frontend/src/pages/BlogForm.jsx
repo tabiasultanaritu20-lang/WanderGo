@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Upload, Save } from "lucide-react";
+import { ArrowLeft, Upload, Save, Image as ImageIcon, Plus } from "lucide-react";
 
 const API_URL = "http://localhost:8080/api/blogs";
 
@@ -12,11 +12,19 @@ const BlogForm = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    content: "", 
+    content: "",
     location: "",
     categories: "",
   });
-  const [images, setImages] = useState([]);
+
+  // Separate states for Cover Image and Gallery Images
+  const [coverImage, setCoverImage] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
+  
+  // Preview states for UI feedback
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -29,6 +37,8 @@ const BlogForm = () => {
           location: d.location || "",
           categories: (d.categories || []).join(", "),
         });
+        // Note: We don't preload file inputs with existing images because file inputs are read-only for security.
+        // You would typically show existing images separately if you wanted to allow deleting them.
       });
     }
   }, [id, isEdit]);
@@ -37,8 +47,23 @@ const BlogForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e) => {
-    setImages(e.target.files);
+  // Handle Cover Image Selection
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverImage(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Handle Gallery Images Selection
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    setGalleryImages((prev) => [...prev, ...files]);
+    
+    // Create previews
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setGalleryPreviews((prev) => [...prev, ...newPreviews]);
   };
 
   const handleSubmit = async (e) => {
@@ -52,8 +77,14 @@ const BlogForm = () => {
     data.append("location", formData.location);
     data.append("categories", formData.categories);
 
-    for (let i = 0; i < images.length; i++) {
-      data.append("images", images[i]);
+    // IMPORTANT: Append Cover Image FIRST so it's always index 0 on backend
+    if (coverImage) {
+      data.append("images", coverImage);
+    }
+
+    // Append Gallery Images
+    for (let i = 0; i < galleryImages.length; i++) {
+      data.append("images", galleryImages[i]);
     }
 
     try {
@@ -90,18 +121,21 @@ const BlogForm = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            
+            {/* 1. Title */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
               <input
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition"
                 placeholder="Give your story a catchy title..."
                 required
               />
             </div>
 
+            {/* 2. Location & Categories */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
@@ -125,40 +159,76 @@ const BlogForm = () => {
               </div>
             </div>
 
+            {/* 3. COVER IMAGE UPLOAD (Single) */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Cover Image & Gallery</label>
-              <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition cursor-pointer relative">
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleFileChange}
-                  className="absolute inset-0 opacity-0 cursor-pointer"
-                />
-                <div className="flex flex-col items-center justify-center pointer-events-none">
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-3">
-                    <Upload className="w-6 h-6" />
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Main Cover Photo <span className="text-slate-400 font-normal">(Required)</span>
+              </label>
+              <div className="flex items-start gap-4">
+                <div className="relative w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`border-2 border-dashed rounded-xl p-6 text-center transition ${coverPreview ? 'border-indigo-300 bg-indigo-50' : 'border-slate-300 hover:bg-slate-50'}`}>
+                    {coverPreview ? (
+                      <img src={coverPreview} alt="Cover Preview" className="h-48 w-full object-cover rounded-lg mx-auto" />
+                    ) : (
+                      <div className="flex flex-col items-center py-4">
+                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                        <span className="text-sm font-medium text-slate-600">Click to upload cover</span>
+                      </div>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-slate-900">Click to upload photos</p>
-                  <p className="text-xs text-slate-500 mt-1">JPG, PNG up to 10MB</p>
                 </div>
               </div>
-              {images.length > 0 && (
-                <p className="text-sm text-green-600 mt-2 font-medium">{images.length} files selected</p>
+            </div>
+
+            {/* 4. GALLERY UPLOAD (Multiple) */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Gallery Photos <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 relative hover:bg-slate-50 transition">
+                 <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleGalleryChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex flex-col items-center justify-center pointer-events-none py-4">
+                    <Plus className="w-8 h-8 text-indigo-500 mb-2" />
+                    <span className="text-sm font-medium text-slate-700">Add more photos</span>
+                    <span className="text-xs text-slate-500">You can select multiple files</span>
+                  </div>
+              </div>
+
+              {/* Gallery Previews */}
+              {galleryPreviews.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {galleryPreviews.map((src, idx) => (
+                    <img key={idx} src={src} alt={`Gallery ${idx}`} className="w-full h-24 object-cover rounded-lg border border-slate-200" />
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* STANDARD TEXT AREA (No Crashes) */}
+            {/* 5. Content */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Your Story</label>
               <textarea
                 name="content"
                 value={formData.content}
                 onChange={handleChange}
-                className="w-full h-80 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed"
+                className="w-full h-60 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed"
                 placeholder="Share your experience..."
               />
             </div>
 
+            {/* Submit */}
             <div className="pt-6 border-t border-slate-100 flex justify-end">
               <button
                 type="submit"
@@ -173,6 +243,7 @@ const BlogForm = () => {
                 )}
               </button>
             </div>
+
           </form>
         </div>
       </div>
