@@ -14,7 +14,10 @@ const blogSchema = new mongoose.Schema(
     location: { type: String, default: "Unknown" },
     categories: { type: [String], default: [] },
 
+    
     coverImageUrl: { type: String, default: "" },
+    images: { type: [String], default: [] },
+
 
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
