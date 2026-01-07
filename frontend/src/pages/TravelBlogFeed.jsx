@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./TravelBlogFeed.css";
@@ -12,7 +12,9 @@ const TravelBlogFeed = () => {
   const [category, setCategory] = useState("");
   const [location, setLocation] = useState("");
   const [error, setError] = useState(null);
+
   const navigate = useNavigate();
+  const isInitialLoad = useRef(true);
 
   const getToken = () => localStorage.getItem("token");
 
@@ -24,10 +26,6 @@ const TravelBlogFeed = () => {
     if (Array.isArray(payload.results)) return payload.results;
     return [];
   };
-
-  // Store initial unique options so they don't disappear when we filter the list
-  const [filterOptions, setFilterOptions] = useState({ categories: [], locations: [] });
-  const isInitialLoad = useRef(true);
 
   const fetchBlogs = async () => {
     try {
@@ -43,15 +41,14 @@ const TravelBlogFeed = () => {
 
       const blogsWithCounts = list.map((b) => ({
         ...b,
-        likesCount: Array.isArray(b.likes) ? b.likes.length : (b.likesCount || 0),
+        likesCount: Array.isArray(b.likes) ? b.likes.length : 0,
         liked: false,
       }));
 
       setBlogs(blogsWithCounts);
     } catch (err) {
-      console.error("Error fetching blogs:", err);
+      console.error(err);
       setError("Could not load blogs.");
-      setBlogs([]);
     } finally {
       setLoading(false);
     }
@@ -63,68 +60,30 @@ const TravelBlogFeed = () => {
 
   const handleLike = async (id) => {
     const token = getToken();
-    if (!token) return alert("Please log in to like blogs.");
+    if (!token) return alert("Login required");
 
-    // optimistic UI
     setBlogs((prev) =>
-      prev.map((blog) => {
-        if (blog._id !== id) return blog;
-        const liked = !blog.liked;
-        const likesCount = (blog.likesCount || 0) + (liked ? 1 : -1);
-        return { ...blog, liked, likesCount };
-      })
+      prev.map((b) =>
+        b._id === id
+          ? { ...b, liked: !b.liked, likesCount: b.likesCount + (b.liked ? -1 : 1) }
+          : b
+      )
     );
 
     try {
-      const r = await axios.post(
+      await axios.post(
         `${API_URL}/${id}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      // if backend returns updated blog, sync it
-      const updated = r.data?.data || r.data;
-      if (updated && updated._id) {
-        setBlogs((prev) =>
-          prev.map((b) =>
-            b._id === updated._id
-              ? {
-                  ...b,
-                  ...updated,
-                  likesCount: Array.isArray(updated.likes) ? updated.likes.length : (updated.likesCount || b.likesCount),
-                }
-              : b
-          )
-        );
-      }
     } catch (err) {
-      console.error("Error liking blog:", err);
-    }
-  };
-
-  const handleShareToProfile = async (id) => {
-    const token = getToken();
-    if (!token) return alert("Please log in to share blogs.");
-
-    try {
-      await axios.post(
-        `${API_URL}/${id}/share`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Blog shared to your profile.");
-    } catch (err) {
-      console.error("Error sharing blog:", err);
-      alert("Could not share blog. Check console/backend.");
+      console.error(err);
     }
   };
 
   const handleCopyLink = (id) => {
-    const url = `${window.location.origin}/blog/${id}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => alert("Link copied to clipboard"))
-      .catch((err) => console.error("Could not copy link:", err));
+    navigator.clipboard.writeText(`${window.location.origin}/blog/${id}`);
+    alert("Link copied");
   };
 
   const handleFilterSubmit = (e) => {
@@ -145,17 +104,17 @@ const TravelBlogFeed = () => {
       <form className="travel-blog-feed__filters" onSubmit={handleFilterSubmit}>
         <input
           type="text"
-          placeholder="Filter by category (e.g. Beach, Food)"
+          placeholder="Filter by category"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         />
         <input
           type="text"
-          placeholder="Filter by location (e.g. Dhaka, Nepal)"
+          placeholder="Filter by location"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
-        <button type="submit">Apply Filters</button>
+        <button type="submit">Apply</button>
         <button
           type="button"
           onClick={() => {
@@ -168,76 +127,108 @@ const TravelBlogFeed = () => {
         </button>
       </form>
 
-      {error && <p className="travel-blog-feed__error">{error} – check console / backend.</p>}
+      {error && <p className="travel-blog-feed__error">{error}</p>}
 
       {loading ? (
-        <p className="travel-blog-feed__loading">Loading blogs...</p>
+        <p>Loading blogs...</p>
       ) : blogs.length === 0 ? (
-        <p className="travel-blog-feed__empty">No blogs found. Be the first to share your story!</p>
+        <p>No blogs found.</p>
       ) : (
         <div className="travel-blog-feed__list">
           {blogs.map((blog) => {
-            const previewText = (blog.content || blog.body || "").toString();
+            const previewText = blog.content || "";
 
-            const raw = blog.coverImageUrl || blog.coverImage || blog.imageUrl || "";
-            const imgSrc =
-              raw && raw.startsWith("http") ? raw : raw ? `${BACKEND_URL}${raw}` : "";
+            const images = Array.isArray(blog.images) ? blog.images : [];
+            const allImages = [
+              ...(blog.coverImageUrl ? [blog.coverImageUrl] : []),
+              ...images,
+            ].filter(Boolean);
+
+            const uniqueImages = Array.from(new Set(allImages)).map((img) =>
+              img.startsWith("http") ? img : `${BACKEND_URL}${img}`
+            );
 
             return (
               <div key={blog._id} className="travel-blog-feed__card">
-                <div className="travel-blog-feed__card-header">
-                  <div>
-                    <h2>{blog.title}</h2>
-                    <div className="travel-blog-feed__meta">
-                      <span>{blog.location || "Unknown"}</span>
-                      <span>
-                        {blog.createdAt &&
-                          new Date(blog.createdAt).toLocaleString("en-GB", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="travel-blog-feed__author">
-                    by {blog.authorName || "Anonymous Traveler"}
+                <h2>{blog.title}</h2>
+
+                <div className="travel-blog-feed__meta">
+                  <span>{blog.location || "Unknown"}</span>
+                  <span>
+                    {blog.createdAt &&
+                      new Date(blog.createdAt).toLocaleDateString()}
                   </span>
                 </div>
 
-                {imgSrc && (
-                  <div className="travel-blog-feed__image-wrapper">
-                    <img
-                      src={imgSrc}
-                      alt={blog.title}
-                      className="travel-blog-feed__image"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
-                      }}
-                    />
+                {/* MAIN IMAGE */}
+                {uniqueImages.length > 0 && (
+                  <img
+                    src={uniqueImages[0]}
+                    alt={blog.title}
+                    className="travel-blog-feed__image"
+                  />
+                )}
+
+                {/* THUMBNAILS */}
+                {uniqueImages.length > 1 && (
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gap: 8,
+                      marginTop: 8,
+                    }}
+                  >
+                    {uniqueImages.slice(1, 5).map((src, idx) => (
+                      <img
+                        key={src + idx}
+                        src={src}
+                        alt=""
+                        style={{
+                          width: "100%",
+                          height: 80,
+                          objectFit: "cover",
+                          borderRadius: 8,
+                        }}
+                      />
+                    ))}
+                    {uniqueImages.length > 5 && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        +{uniqueImages.length - 5} more
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <p className="travel-blog-feed__content-preview">
-                  {previewText.length > 200 ? previewText.slice(0, 200) + "..." : previewText}
+                <p>
+                  {previewText.length > 200
+                    ? previewText.slice(0, 200) + "..."
+                    : previewText}
                 </p>
 
-                {blog.categories && blog.categories.length > 0 && (
+                {blog.categories?.length > 0 && (
                   <div className="travel-blog-feed__tags">
                     {blog.categories.map((cat) => (
-                      <span key={cat} className="travel-blog-feed__tag">
-                        #{cat}
-                      </span>
+                      <span key={cat}>#{cat}</span>
                     ))}
                   </div>
                 )}
 
                 <div className="travel-blog-feed__actions">
                   <button onClick={() => handleLike(blog._id)}>
-                    {blog.liked ? "💔 Unlike" : "❤️ Like"} ({blog.likesCount || 0})
+                    ❤️ {blog.likesCount}
                   </button>
-                  <button onClick={() => handleCopyLink(blog._id)}>🔗 Copy Link</button>
-                  <button onClick={() => handleShareToProfile(blog._id)}>📤 Share to Profile</button>
-                  <button onClick={() => navigate(`/blog/${blog._id}`)}>👁 View Details</button>
+                  <button onClick={() => handleCopyLink(blog._id)}>🔗 Copy</button>
+                  <button onClick={() => navigate(`/blog/${blog._id}`)}>
+                    👁 View
+                  </button>
                 </div>
               </div>
             );
