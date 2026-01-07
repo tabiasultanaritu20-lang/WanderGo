@@ -5,11 +5,25 @@ const blogController = require("../controller/blogController");
 const upload = require("../middleware/upload");
 const { authMiddleware } = require("../middleware/authMiddleware");
 
-// PUBLIC
+// =============================================
+// 1. SPECIFIC ROUTES (MUST BE DEFINED FIRST)
+// =============================================
+
+// This must be above /:id, otherwise "saved-blogs" is treated as an ID
+router.get("/saved-blogs", authMiddleware, blogController.getSavedBlogs);
+
 router.get("/", blogController.getBlogs);
+
+
+// =============================================
+// 2. DYNAMIC ROUTES (GENERIC ID HANDLERS)
+// =============================================
+
+// If this was at the top, it would steal the request!
 router.get("/:id", blogController.getBlogById);
 
-// PROTECTED
+// PROTECTED ROUTES
+router.post("/:id/save", authMiddleware, blogController.toggleSaveBlog);
 router.post("/", authMiddleware, upload.array("images", 8), blogController.createBlog);
 router.put("/:id", authMiddleware, upload.array("images", 8), blogController.updateBlog);
 router.delete("/:id", authMiddleware, blogController.deleteBlog);

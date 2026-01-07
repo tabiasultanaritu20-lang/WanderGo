@@ -1,5 +1,5 @@
 import React from "react";
-import { ShoppingCart, MapPin, Star, Compass } from "lucide-react";
+import { ShoppingCart, MapPin, Star, Compass, Bookmark } from "lucide-react"; // Added Bookmark icon
 import { Link } from "react-router-dom";
 
 function Nav({ cartCount }) {
@@ -59,6 +59,15 @@ function Nav({ cartCount }) {
             className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
           >
             Blog
+          </Link>
+
+          {/* ADDED: Saved Blogs Link */}
+          <Link
+            to="/saved-blogs"
+            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
+          >
+            <Bookmark className="w-4 h-4" />
+            Saved
           </Link>
 
           <Link
