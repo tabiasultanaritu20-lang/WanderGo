@@ -14,7 +14,9 @@ const BlogForm = () => {
   const [location, setLocation] = useState("");
   const [categoriesText, setCategoriesText] = useState("");
   const [content, setContent] = useState("");
-  const [coverImageFile, setCoverImageFile] = useState(null);
+
+  const [imageFiles, setImageFiles] = useState([]);
+
   const [loading, setLoading] = useState(false);
 
   const token = localStorage.getItem("token");
@@ -55,12 +57,11 @@ const BlogForm = () => {
     formData.append("authorName", authorName);
     formData.append("location", location);
     formData.append("content", content);
-    formData.append("categories", categoriesText); // comma separated string triggering backend split
+    formData.append("categories", categoriesText);
 
-    // ✅ multer field must be "coverImage"
-    if (coverImageFile) {
-      formData.append("coverImage", coverImageFile);
-    }
+    imageFiles.forEach((file) => {
+      formData.append("images", file);
+    });
 
     try {
       setLoading(true);
@@ -138,12 +139,18 @@ const BlogForm = () => {
           </div>
 
           <div className="blog-form__field">
-            <label>Cover Image (optional)</label>
+            <label>Images </label>
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setCoverImageFile(e.target.files?.[0] || null)}
+              multiple
+              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
             />
+            {imageFiles.length > 0 && (
+              <small style={{ display: "block", marginTop: 6 }}>
+                Selected: {imageFiles.length} file(s)
+              </small>
+            )}
           </div>
 
           <div className="blog-form__field">

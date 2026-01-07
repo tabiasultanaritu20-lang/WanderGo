@@ -1,5 +1,6 @@
 
 import './App.css'
+import DestinationWheel from "./pages/DestinationWheel";
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import SignUp from '../src/pages/SignUp.jsx'
 import Login from '../src/pages/Login.jsx'
@@ -15,6 +16,7 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/wheel" element={<DestinationWheel />} />
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />

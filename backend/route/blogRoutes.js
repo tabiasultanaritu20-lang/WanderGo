@@ -10,8 +10,8 @@ router.get("/", blogController.getBlogs);
 router.get("/:id", blogController.getBlogById);
 
 // PROTECTED
-router.post("/", authMiddleware, upload.single("coverImage"), blogController.createBlog);
-router.put("/:id", authMiddleware, upload.single("coverImage"), blogController.updateBlog);
+router.post("/", authMiddleware, upload.array("images", 8), blogController.createBlog);
+router.put("/:id", authMiddleware, upload.array("images", 8), blogController.updateBlog);
 router.delete("/:id", authMiddleware, blogController.deleteBlog);
 
 router.post("/:id/like", authMiddleware, blogController.toggleLike);

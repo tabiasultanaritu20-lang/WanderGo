@@ -19,7 +19,6 @@ const isOwnerOrAdmin = (blog, userId, role) => {
   return blog.author.toString() === String(userId);
 };
 
-// GET /api/blogs?category=&location=
 const escapeRegex = (s = "") => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // GET /api/blogs?category=&location=
@@ -29,14 +28,11 @@ exports.getBlogs = async (req, res) => {
 
     const filter = {};
 
-    // CATEGORY: partial match, case-insensitive, works with categories array
     if (category && category.trim()) {
       const cat = escapeRegex(category.trim());
       filter.categories = { $elemMatch: { $regex: cat, $options: "i" } };
     }
 
-    // LOCATION: partial match, case-insensitive
-    // Works if user types only city OR only country OR both
     if (location && location.trim()) {
       const loc = escapeRegex(location.trim());
       filter.location = { $regex: loc, $options: "i" };
@@ -85,16 +81,18 @@ exports.createBlog = async (req, res) => {
       ? categories.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    const coverImageUrl = req.file ? `/uploads/${req.file.filename}` : "";
+    const imageUrls = (req.files || []).map((f) => `/uploads/${f.filename}`);
+    const coverImageUrl = imageUrls[0] || "";
 
     const blog = await Blog.create({
       title,
       content,
-      author: userId, // ✅ owner saved
+      author: userId,
       authorName: (authorName && authorName.trim()) || name || email || "Anonymous Traveler",
       location,
       categories: categoriesArr,
       coverImageUrl,
+      
     });
 
     res.status(201).json({ message: "Blog created", data: blog });
@@ -113,7 +111,6 @@ exports.updateBlog = async (req, res) => {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    // ✅ enforce ownership
     if (!isOwnerOrAdmin(blog, userId, role)) {
       return res.status(403).json({ message: "Not allowed" });
     }
@@ -132,7 +129,12 @@ exports.updateBlog = async (req, res) => {
     if (authorName !== undefined) blog.authorName = authorName;
     if (location !== undefined) blog.location = location;
     if (categoriesArr !== undefined) blog.categories = categoriesArr;
-    if (req.file) blog.coverImageUrl = `/uploads/${req.file.filename}`;
+
+    if (req.files && req.files.length) {
+      const newUrls = req.files.map((f) => `/uploads/${f.filename}`);
+      blog.images = [...(blog.images || []), ...newUrls];
+      if (!blog.coverImageUrl) blog.coverImageUrl = blog.images[0] || "";
+    }
 
     await blog.save();
     res.json({ message: "Blog updated", data: blog });
@@ -151,7 +153,6 @@ exports.deleteBlog = async (req, res) => {
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    // ✅ enforce ownership
     if (!isOwnerOrAdmin(blog, userId, role)) {
       return res.status(403).json({ message: "Not allowed" });
     }
@@ -195,10 +196,8 @@ exports.toggleLike = async (req, res) => {
 // POST /api/blogs/:id/comments
 exports.addComment = async (req, res) => {
   try {
-    const userId =
-      req.user.playLoad?.id ||
-      req.user.id ||
-      req.user._id;
+    const { id: userId } = getUserFromReq(req);
+    if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
     const { text } = req.body;
     if (!text || !text.trim()) {
@@ -210,7 +209,6 @@ exports.addComment = async (req, res) => {
       return res.status(404).json({ message: "Blog not found" });
     }
 
-    // 🔹 Fetch user to get NAME (not email)
     const user = await User.findById(userId).select("name");
     const commenterName = user?.name || "Traveler";
 
@@ -236,23 +234,28 @@ exports.addComment = async (req, res) => {
 // DELETE /api/blogs/:id/comments/:commentId
 exports.deleteComment = async (req, res) => {
   try {
+    const { id, commentId } = req.params;
+
     const { id: userId, role } = getUserFromReq(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
-    const { id, commentId } = req.params;
 
     const blog = await Blog.findById(id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
 
-    const c = (blog.comments || []).find((x) => x._id.toString() === commentId);
-    if (!c) return res.status(404).json({ message: "Comment not found" });
+    const comment = (blog.comments || []).find((c) => String(c._id) === String(commentId));
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
 
-    if (role !== "admin" && c.user?.toString() !== String(userId)) {
-      return res.status(403).json({ message: "Not allowed" });
+    const isAdmin = role === "admin";
+    const isBlogOwner = blog.author && String(blog.author) === String(userId);
+    const isCommentOwner = comment.user && String(comment.user) === String(userId);
+
+    if (!isAdmin && !isBlogOwner && !isCommentOwner) {
+      return res.status(403).json({ message: "Not allowed to delete this comment" });
     }
 
-    blog.comments = blog.comments.filter((x) => x._id.toString() !== commentId);
+    blog.comments = blog.comments.filter((c) => String(c._id) !== String(commentId));
     await blog.save();
+
     res.json({ message: "Comment deleted" });
   } catch (err) {
     console.error("Error deleting comment:", err);
