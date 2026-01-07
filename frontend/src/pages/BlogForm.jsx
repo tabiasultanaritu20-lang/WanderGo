@@ -1,173 +1,180 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import "./TravelBlogFeed.css";
+import { ArrowLeft, Upload, Save } from "lucide-react";
 
 const API_URL = "http://localhost:8080/api/blogs";
 
 const BlogForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isEdit = Boolean(id);
 
-  const [title, setTitle] = useState("");
-  const [authorName, setAuthorName] = useState("");
-  const [location, setLocation] = useState("");
-  const [categoriesText, setCategoriesText] = useState("");
-  const [content, setContent] = useState("");
-
-  const [imageFiles, setImageFiles] = useState([]);
-
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "", 
+    location: "",
+    categories: "",
+  });
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!id) return;
+    if (isEdit) {
+      axios.get(`${API_URL}/${id}`).then((res) => {
+        const d = res.data.data || res.data;
+        setFormData({
+          title: d.title || "",
+          content: d.content || "",
+          location: d.location || "",
+          categories: (d.categories || []).join(", "),
+        });
+      });
+    }
+  }, [id, isEdit]);
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`${API_URL}/${id}`);
-        const b = res.data?.data || res.data;
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        setTitle(b?.title || "");
-        setAuthorName(b?.authorName || "");
-        setLocation(b?.location || "");
-        setCategoriesText(Array.isArray(b?.categories) ? b.categories.join(", ") : (b?.categories || ""));
-        setContent((b?.content || b?.body || "").toString());
-      } catch (e) {
-        console.error(e);
-        alert("Failed to load blog");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [id]);
+  const handleFileChange = (e) => {
+    setImages(e.target.files);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return alert("Login required");
+    setLoading(true);
+    const token = localStorage.getItem("token");
 
-    if (!title.trim() || !content.trim()) return alert("Title and content required");
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("content", formData.content);
+    data.append("location", formData.location);
+    data.append("categories", formData.categories);
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("authorName", authorName);
-    formData.append("location", location);
-    formData.append("content", content);
-    formData.append("categories", categoriesText);
-
-    imageFiles.forEach((file) => {
-      formData.append("images", file);
-    });
+    for (let i = 0; i < images.length; i++) {
+      data.append("images", images[i]);
+    }
 
     try {
-      setLoading(true);
-
-      const headers = { Authorization: `Bearer ${token}` };
-
-      if (id) {
-        await axios.put(`${API_URL}/${id}`, formData, { headers });
+      if (isEdit) {
+        await axios.put(`${API_URL}/${id}`, data, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        });
       } else {
-        await axios.post(API_URL, formData, { headers });
+        await axios.post(API_URL, data, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        });
       }
-
       navigate("/blog");
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Server error while creating blog");
+      console.error("Error saving blog:", err);
+      alert("Failed to save blog.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="travel-blog-feed">
-      <button onClick={() => navigate("/blog")} style={{ marginBottom: 16 }}>
-        ← Back
-      </button>
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-3xl mx-auto">
+        <button onClick={() => navigate("/blog")} className="flex items-center text-slate-500 hover:text-slate-800 mb-6 transition">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Feed
+        </button>
 
-      <div className="travel-blog-feed__card">
-        <h2 style={{ marginTop: 0 }}>{id ? "Edit Blog" : "Create New Blog"}</h2>
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+            <h1 className="text-2xl font-bold text-slate-800">
+              {isEdit ? "Edit Story" : "Write a New Story"}
+            </h1>
+          </div>
 
-        <form onSubmit={handleSubmit} className="blog-form">
-          <div className="blog-form__row">
-            <div className="blog-form__field">
-              <label>Title *</label>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
               <input
-                type="text"
-                placeholder="Trip to Cox's Bazar"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                placeholder="Give your story a catchy title..."
                 required
               />
             </div>
 
-            <div className="blog-form__field">
-              <label>Author</label>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+                <input
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="e.g., Bali, Indonesia"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Categories</label>
+                <input
+                  name="categories"
+                  value={formData.categories}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="e.g., Beach, Food, Budget"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Cover Image & Gallery</label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:bg-slate-50 transition cursor-pointer relative">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
+                <div className="flex flex-col items-center justify-center pointer-events-none">
+                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mb-3">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-medium text-slate-900">Click to upload photos</p>
+                  <p className="text-xs text-slate-500 mt-1">JPG, PNG up to 10MB</p>
+                </div>
+              </div>
+              {images.length > 0 && (
+                <p className="text-sm text-green-600 mt-2 font-medium">{images.length} files selected</p>
+              )}
+            </div>
+
+            {/* STANDARD TEXT AREA (No Crashes) */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Your Story</label>
+              <textarea
+                name="content"
+                value={formData.content}
+                onChange={handleChange}
+                className="w-full h-80 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed"
+                placeholder="Share your experience..."
               />
             </div>
-          </div>
 
-          <div className="blog-form__row">
-            <div className="blog-form__field">
-              <label>Location</label>
-              <input
-                type="text"
-                placeholder="Cox's Bazar, Bangladesh"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
+            <div className="pt-6 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-50"
+              >
+                {loading ? "Saving..." : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Publish Story
+                  </>
+                )}
+              </button>
             </div>
-
-            <div className="blog-form__field">
-              <label>Categories (comma separated)</label>
-              <input
-                type="text"
-                placeholder="Beach, Food"
-                value={categoriesText}
-                onChange={(e) => setCategoriesText(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="blog-form__field">
-            <label>Images </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
-            />
-            {imageFiles.length > 0 && (
-              <small style={{ display: "block", marginTop: 6 }}>
-                Selected: {imageFiles.length} file(s)
-              </small>
-            )}
-          </div>
-
-          <div className="blog-form__field">
-            <label>Content *</label>
-            <textarea
-              rows="8"
-              placeholder="Write your travel story..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Publishing..." : id ? "Update" : "Publish"}
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );
