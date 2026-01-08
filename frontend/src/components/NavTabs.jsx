@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 
 const items = [
   { key: "home", label: "Home", to: "/dashboard" },
-  { key: "packages", label: "Packages", to: "/packages" },
   { key: "wheel", label: "Destination Wheel", to: "/wheel" },
   { key: "agency", label: "Agency", to: "/create-tour" },
   { key: "emergency", label: "Emergency Hub", to: "/EmergencyHub" },

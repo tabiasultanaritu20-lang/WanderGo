@@ -1,9 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Input from '../components/Input.jsx'
+import useUser from '../../hooks/userInfo'
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
 export default function SpotDirectory() {
+  const { isAdmin } = useUser()
+  const token = localStorage.getItem("token")
   const [list, setList] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +25,10 @@ export default function SpotDirectory() {
   const deleteSpot = async (spotId) => {
     if (!spotId) return
     try {
-      const r = await fetch(`${API_BASE}/spots/${spotId}`, { method: 'DELETE' })
+      const r = await fetch(`${API_BASE}/spots/${spotId}`, {
+        method: 'DELETE',
+        headers: token ? { "Authorization": `Bearer ${token}` } : undefined
+      })
       if (!r.ok) {
         let msg = 'Failed to delete spot'
         try {
@@ -91,7 +97,9 @@ export default function SpotDirectory() {
                 <Input label="Category" name="category" placeholder="Category" value={category} onChange={(e) => setCategory(e.target.value)} />
                 <Input label="Tag" name="tag" placeholder="Tag" value={tag} onChange={(e) => setTag(e.target.value)} />
                 <div className="flex justify-end">
-                  <button onClick={()=>setShowAdd(v=>!v)} className="px-3 py-2 rounded-lg border border-slate-300 mr-2 text-sm">Add spot</button>
+                  {isAdmin && (
+                    <button onClick={()=>setShowAdd(v=>!v)} className="px-3 py-2 rounded-lg border border-slate-300 mr-2 text-sm">Add spot</button>
+                  )}
                   <button disabled={loading} onClick={load} className={`px-3 py-2 rounded-lg text-sm ${loading ? 'bg-slate-200 text-slate-500' : 'bg-slate-900 text-white'}`}>Search</button>
                 </div>
               </div>
@@ -109,7 +117,7 @@ export default function SpotDirectory() {
         <main className="flex-1 p-6">
           <h1 className="text-2xl font-semibold text-white">Tourist Spot Directory</h1>
 
-        {showAdd && (
+        {isAdmin && showAdd && (
           <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Input label="Name" name="name" value={newSpot.name} onChange={(e)=>setNewSpot({...newSpot, name:e.target.value})} />
@@ -139,7 +147,14 @@ export default function SpotDirectory() {
                       lng: newSpot.lng ? Number(newSpot.lng) : undefined
                     }
                     try {
-                      const r = await fetch(`${API_BASE}/spots`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
+                      const r = await fetch(`${API_BASE}/spots`, {
+                        method:'POST',
+                        headers:{
+                          'Content-Type':'application/json',
+                          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+                        },
+                        body: JSON.stringify(body)
+                      })
                       await r.json()
                       setShowAdd(false)
                       setNewSpot({ name:'', country:'', city:'', category:'', tagString:'', description:'', lat:'', lng:'', photoUrl:'' })
@@ -169,16 +184,18 @@ export default function SpotDirectory() {
                     {typeof s.lat === 'number' && typeof s.lng === 'number' && (
                       <a className="text-sm text-slate-700 hover:underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}>Map</a>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); deleteSpot(s._id) }}
-                      className="p-2 rounded-full hover:bg-red-50"
-                      title="Delete"
-                      aria-label="Delete spot"
-                    >
-                      <svg className="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
-                      </svg>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteSpot(s._id) }}
+                        className="p-2 rounded-full hover:bg-red-50"
+                        title="Delete"
+                        aria-label="Delete spot"
+                      >
+                        <svg className="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-600 truncate">{s.description}</p>

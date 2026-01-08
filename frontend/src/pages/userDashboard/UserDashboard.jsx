@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Outlet } from "react-router-dom"; // This renders the child page
 import { FiMenu } from "react-icons/fi";
 import Sidebar from "../../components/layout/Sidebar.jsx"; // Adjust path to your Sidebar file
-import Nav from "../../components/Nav"; // Adjust path to your Nav file
 
 export default function UserPanel() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,11 +9,6 @@ export default function UserPanel() {
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-
-            {/* 1. TOP NAVIGATION (Fixed) */}
-            <div className="sticky top-0 z-40 bg-white border-b border-slate-200">
-                <Nav />
-            </div>
 
             {/* 2. MAIN LAYOUT CONTAINER */}
             <div className="flex flex-1 relative max-w-[1920px] mx-auto w-full">

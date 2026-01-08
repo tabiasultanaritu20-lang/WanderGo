@@ -65,10 +65,10 @@ function App() {
                     <Route path="/profile" element={<><Nav /><Chatbot /><Profile /></>} />
                     
                     {/* Blog Routes */}
-                    <Route path="/blog" element={<><Nav /><Chatbot /><TravelBlogFeed /></>} />
-                    <Route path="/blog/new" element={<><Nav /><Chatbot /><BlogForm /></>} />
-                    <Route path="/blog/:id" element={<><Nav /><Chatbot /><BlogDetails /></>} />
-                    <Route path="/blog/:id/edit" element={<><Nav /><Chatbot /><BlogForm /></>} />
+                    <Route path="/blog" element={<><Chatbot /><TravelBlogFeed /></>} />
+                    <Route path="/blog/new" element={<><Chatbot /><BlogForm /></>} />
+                    <Route path="/blog/:id" element={<><Chatbot /><BlogDetails /></>} />
+                    <Route path="/blog/:id/edit" element={<><Chatbot /><BlogForm /></>} />
                     
                     {/* Saved Blogs */}
                     <Route path="/saved" element={<><Nav /><Chatbot /><SavedBlogs /></>} />

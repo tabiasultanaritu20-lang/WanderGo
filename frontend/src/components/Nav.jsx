@@ -57,13 +57,6 @@ function Nav({ cartCount }) {
             </Link>
 
             <Link
-                to="/packages"
-                className={`text-sm font-medium transition ${isActive('/packages') ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              Packages
-            </Link>
-
-            <Link
                 to="/wheel"
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
             >

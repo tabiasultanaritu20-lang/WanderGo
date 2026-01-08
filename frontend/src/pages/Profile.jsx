@@ -11,7 +11,6 @@ import toast, { Toaster } from 'react-hot-toast';
 // API Imports (Ensure these point to your actual API files)
 import userApi from "../api/userApi";
 import reviewApi from "../api/reviewApi";
-import Nav from "../components/Nav";
 import useUser from "../../hooks/userInfo.js"; // Assuming this hook decodes your JWT
 
 export default function Profile() {
@@ -204,7 +203,6 @@ export default function Profile() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans pb-12">
-            <Nav />
             <Toaster position="top-center" />
 
             <div className="max-w-6xl mx-auto px-4 py-8">

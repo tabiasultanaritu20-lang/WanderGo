@@ -50,7 +50,7 @@ const createTour = async (req, res, next) => {
             description,
             imageUrl,
             isActive,
-            agency: req.user.playLoad.id
+            agency: req.user.id
         });
 
         return res.status(201).json({

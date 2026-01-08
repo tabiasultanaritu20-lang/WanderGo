@@ -9,7 +9,7 @@ const initialTours = [
         location: 'Paris, France',
         price: 1200,
         date: '2024-06-15',
-        imageUrl: 'https://placehold.co/400x250/2563EB/FFFFFF?text=Paris+Adventure',
+        imageUrl: 'https://dummyimage.com/400x250/2563EB/FFFFFF.png?text=Paris+Adventure',
         rating: 4.5,
         duration: '5 days',
         type: 'Cultural'
@@ -20,7 +20,7 @@ const initialTours = [
         location: 'Tokyo, Japan',
         price: 1500,
         date: '2024-07-01',
-        imageUrl: 'https://placehold.co/400x250/F59E0B/FFFFFF?text=Tokyo+Explorer',
+        imageUrl: 'https://dummyimage.com/400x250/F59E0B/FFFFFF.png?text=Tokyo+Explorer',
         rating: 4.8,
         duration: '7 days',
         type: 'Adventure'
@@ -31,7 +31,7 @@ const initialTours = [
         location: 'Bali, Indonesia',
         price: 900,
         date: '2024-05-20',
-        imageUrl: 'https://placehold.co/400x250/10B981/FFFFFF?text=Bali+Retreat',
+        imageUrl: 'https://dummyimage.com/400x250/10B981/FFFFFF.png?text=Bali+Retreat',
         rating: 4.6,
         duration: '6 days',
         type: 'Beach'
@@ -42,7 +42,7 @@ const initialTours = [
         location: 'NYC, USA',
         price: 1800,
         date: '2024-09-10',
-        imageUrl: 'https://placehold.co/400x250/DC2626/FFFFFF?text=NYC+Lights',
+        imageUrl: 'https://dummyimage.com/400x250/DC2626/FFFFFF.png?text=NYC+Lights',
         rating: 4.7,
         duration: '3 days',
         type: 'Cultural'
@@ -53,7 +53,7 @@ const initialTours = [
         location: 'Swiss Alps, Switzerland',
         price: 2200,
         date: '2024-08-01',
-        imageUrl: 'https://placehold.co/400x250/06B6D4/FFFFFF?text=Swiss+Hike',
+        imageUrl: 'https://dummyimage.com/400x250/06B6D4/FFFFFF.png?text=Swiss+Hike',
         rating: 4.9,
         duration: '10 days',
         type: 'Adventure'
@@ -64,7 +64,7 @@ const initialTours = [
         location: 'Grand Cayman',
         price: 1100,
         date: '2024-11-05',
-        imageUrl: 'https://placehold.co/400x250/0F766E/FFFFFF?text=Dive+Trip',
+        imageUrl: 'https://dummyimage.com/400x250/0F766E/FFFFFF.png?text=Dive+Trip',
         rating: 4.4,
         duration: '4 days',
         type: 'Beach'
@@ -75,7 +75,7 @@ const initialTours = [
         location: 'Manaus, Brazil',
         price: 2800,
         date: '2024-10-20',
-        imageUrl: 'https://placehold.co/400x250/84CC16/FFFFFF?text=Amazon+Expedition',
+        imageUrl: 'https://dummyimage.com/400x250/84CC16/FFFFFF.png?text=Amazon+Expedition',
         rating: 4.7,
         duration: '14 days',
         type: 'Adventure'

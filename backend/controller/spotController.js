@@ -29,6 +29,10 @@ exports.listSpots = async (req, res) => {
 
 exports.createSpot = async (req, res) => {
   try {
+    if (req.files && req.files.length > 0) {
+      const newUrls = req.files.map((f) => `/uploads/${f.filename}`);
+      req.body.photos = newUrls;
+    }
     const spot = await Spot.create(req.body);
     res.status(201).json({ message: 'created', data: spot });
   } catch (err) {
