@@ -20,10 +20,6 @@ import Profile from "./pages/Profile.jsx";
 import UserPanel from "./pages/userDashboard/UserDashboard.jsx"; // Import the new component
 
 function App() {
-    // Check if user is logged in (Simple check)
-    // You can also check your Context or Redux state here if you have it
-    const isAuthenticated = !!localStorage.getItem("token");
-
     return (
         <BrowserRouter>
             <Routes>
