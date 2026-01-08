@@ -15,13 +15,12 @@ const BlogForm = () => {
     content: "",
     location: "",
     categories: "",
+    authorName: "", // NEW FIELD
   });
 
-  // Separate states for Cover Image and Gallery Images
   const [coverImage, setCoverImage] = useState(null);
   const [galleryImages, setGalleryImages] = useState([]);
   
-  // Preview states for UI feedback
   const [coverPreview, setCoverPreview] = useState(null);
   const [galleryPreviews, setGalleryPreviews] = useState([]);
 
@@ -36,9 +35,8 @@ const BlogForm = () => {
           content: d.content || "",
           location: d.location || "",
           categories: (d.categories || []).join(", "),
+          authorName: d.authorName || "", // Pre-fill if editing
         });
-        // Note: We don't preload file inputs with existing images because file inputs are read-only for security.
-        // You would typically show existing images separately if you wanted to allow deleting them.
       });
     }
   }, [id, isEdit]);
@@ -47,7 +45,6 @@ const BlogForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Cover Image Selection
   const handleCoverChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -56,12 +53,10 @@ const BlogForm = () => {
     }
   };
 
-  // Handle Gallery Images Selection
   const handleGalleryChange = (e) => {
     const files = Array.from(e.target.files);
     setGalleryImages((prev) => [...prev, ...files]);
     
-    // Create previews
     const newPreviews = files.map(file => URL.createObjectURL(file));
     setGalleryPreviews((prev) => [...prev, ...newPreviews]);
   };
@@ -76,13 +71,16 @@ const BlogForm = () => {
     data.append("content", formData.content);
     data.append("location", formData.location);
     data.append("categories", formData.categories);
+    
+    // Send the custom author name
+    if(formData.authorName) {
+        data.append("authorName", formData.authorName);
+    }
 
-    // IMPORTANT: Append Cover Image FIRST so it's always index 0 on backend
     if (coverImage) {
       data.append("images", coverImage);
     }
 
-    // Append Gallery Images
     for (let i = 0; i < galleryImages.length; i++) {
       data.append("images", galleryImages[i]);
     }
@@ -135,8 +133,8 @@ const BlogForm = () => {
               />
             </div>
 
-            {/* 2. Location & Categories */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* 2. Location & Categories & Author Name */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
                 <input
@@ -154,12 +152,24 @@ const BlogForm = () => {
                   value={formData.categories}
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="e.g., Beach, Food, Budget"
+                  placeholder="e.g., Beach, Food"
+                />
+              </div>
+              
+              {/* NEW AUTHOR NAME FIELD */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Author Name</label>
+                <input
+                  name="authorName"
+                  value={formData.authorName}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="Your Name (Optional)"
                 />
               </div>
             </div>
 
-            {/* 3. COVER IMAGE UPLOAD (Single) */}
+            {/* 3. COVER IMAGE UPLOAD */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Main Cover Photo <span className="text-slate-400 font-normal">(Required)</span>
@@ -186,13 +196,13 @@ const BlogForm = () => {
               </div>
             </div>
 
-            {/* 4. GALLERY UPLOAD (Multiple) */}
+            {/* 4. GALLERY UPLOAD */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Gallery Photos <span className="text-slate-400 font-normal">(Optional)</span>
               </label>
               <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 relative hover:bg-slate-50 transition">
-                 <input
+                  <input
                     type="file"
                     multiple
                     accept="image/*"
@@ -206,7 +216,6 @@ const BlogForm = () => {
                   </div>
               </div>
 
-              {/* Gallery Previews */}
               {galleryPreviews.length > 0 && (
                 <div className="grid grid-cols-4 gap-2 mt-4">
                   {galleryPreviews.map((src, idx) => (

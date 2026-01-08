@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { MapPin, Calendar, ThumbsUp, MessageCircle, Share2, User, Bookmark } from "lucide-react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { MapPin, Calendar, ThumbsUp, MessageCircle, ArrowRight, User } from "lucide-react";
+import { useNavigate } from "react-router-dom"; 
 
 const BlogCard = ({ blog }) => {
-  const navigate = useNavigate(); // Initialize navigation
+  const navigate = useNavigate(); 
   const [loaded, setLoaded] = useState({});
 
   const {
@@ -29,11 +29,10 @@ const BlogCard = ({ blog }) => {
 
   const categoryList = [...(categories || []), ...(tags || [])];
 
-  // Helper to fix image URLs
   const getFullImageUrl = (path) => {
     if (!path) return null;
-    if (path.startsWith("http")) return path; // Already a full URL
-    return `http://localhost:8080${path}`; // Add backend URL
+    if (path.startsWith("http")) return path; 
+    return `http://localhost:8080${path}`; 
   };
 
   const allImages = [
@@ -43,15 +42,12 @@ const BlogCard = ({ blog }) => {
 
   const uniqImages = Array.from(new Set(allImages));
 
-  // Navigate to details page when clicked
   const handleCardClick = () => {
     navigate(`/blog/${_id}`);
   };
 
-  // Prevent bubbling so clicking a button doesn't trigger the card navigation immediately if you don't want it to
   const handleLike = (e) => { 
     e.stopPropagation(); 
-    // For now, let's just go to the details page to like
     navigate(`/blog/${_id}`);
   };
 
@@ -60,26 +56,26 @@ const BlogCard = ({ blog }) => {
     navigate(`/blog/${_id}`);
   };
 
-  const handleShare = (e) => { 
+  // Replaced Share with Details
+  const handleDetails = (e) => { 
     e.stopPropagation(); 
     navigate(`/blog/${_id}`);
   };
 
   return (
     <article 
-      onClick={handleCardClick} // Make the whole card clickable
+      onClick={handleCardClick} 
       className="group bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full hover:shadow-xl transition-all duration-300 cursor-pointer"
     >
       {/* Images */}
       {uniqImages.length > 0 && (
         <div className="bg-slate-200">
-          {/* Main image */}
           <div className="relative h-56 overflow-hidden">
             {!loaded[uniqImages[0]] && (
               <div className="absolute inset-0 bg-slate-200 animate-pulse z-0" />
             )}
             <img
-              src={getFullImageUrl(uniqImages[0])} // Use the helper here!
+              src={getFullImageUrl(uniqImages[0])} 
               alt={title}
               onLoad={() => setLoaded((p) => ({ ...p, [uniqImages[0]]: true }))}
               loading="lazy"
@@ -90,13 +86,12 @@ const BlogCard = ({ blog }) => {
             <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20"></div>
           </div>
 
-          {/* Thumbnails */}
           {uniqImages.length > 1 && (
             <div className="p-3 grid grid-cols-4 gap-2 bg-white border-t border-slate-100">
               {uniqImages.slice(1, 5).map((src, idx) => (
                 <div key={src + idx} className="relative aspect-square overflow-hidden rounded-xl bg-slate-200">
                   <img
-                    src={getFullImageUrl(src)} // Use the helper here too!
+                    src={getFullImageUrl(src)} 
                     alt={`${title} ${idx + 2}`}
                     loading="lazy"
                     onLoad={() => setLoaded((p) => ({ ...p, [src]: true }))}
@@ -172,9 +167,10 @@ const BlogCard = ({ blog }) => {
           <span>Comment</span>
         </button>
 
-        <button onClick={handleShare} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors group/btn">
-          <Share2 className="w-4 h-4 group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
-          <span>Share</span>
+        {/* CHANGED: Share -> Details */}
+        <button onClick={handleDetails} className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors group/btn">
+          <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+          <span>Details</span>
         </button>
       </div>
     </article>

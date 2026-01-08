@@ -3,7 +3,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { baseApi } from "../utils/baseApi.js";
 import Input from "../components/Input.jsx";
 import quotes from "../utils/quotes";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const Login = ({
                    action = "/api/user/login",
@@ -13,6 +13,10 @@ const Login = ({
     const [loading, setLoading] = useState(false);
     const [quoteIndex, setQuoteIndex] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // 1. Check if there is a saved location to go back to (e.g., /blog/123)
+    const from = location.state?.from?.pathname || "/dashboard";
 
     useEffect(() => {
         const id = setInterval(
@@ -23,7 +27,6 @@ const Login = ({
     }, []);
 
     const canSubmit = useMemo(() => {
-        // Simple email regex
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(form.email)) return false;
         return form.password.length >= 6;
     }, [form.email, form.password.length]);
@@ -42,29 +45,20 @@ const Login = ({
 
         try {
             setLoading(true);
-            const res = await fetch(action, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify(form),
-            });
-            const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                throw new Error(data?.message || "Login failed. Please try again.");
-            }
-            if (!data?.token || typeof data.token !== "string") {
-                throw new Error("Login failed. Please try again.");
-            }
-            localStorage.setItem("token", data.token);
+            const res = await baseApi.post("/user/login", form);
+            const { token, user, message } = res.data;
+
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+
             onSuccess?.();
             setForm({ email: "", password: "" });
 
-            toast.success(message || "Login successful! Redirecting...");
+            toast.success(message || "Login successful!");
 
-            // Optional: Redirect based on role if needed
-            // if (user.role === 'admin') navigate('/admin-dashboard');
-
+            // 2. Redirect to the saved location (Blog) OR Dashboard
             setTimeout(() => {
-                navigate("/dashboard");
+                navigate(from, { replace: true });
             }, 500);
 
         } catch (err) {
@@ -72,7 +66,6 @@ const Login = ({
                 err.response?.data?.message ||
                 err.message ||
                 "Login failed. Please check your credentials.";
-
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -217,7 +210,6 @@ const Login = ({
                         </button>
                     </form>
 
-                    {/* Mobile welcome + quotes */}
                     <div className="mt-8 md:hidden text-center">
                         <h1 className="text-xl font-semibold text-slate-900">
                             Welcome to WenderGo
