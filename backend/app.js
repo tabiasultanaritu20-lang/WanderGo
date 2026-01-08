@@ -6,6 +6,9 @@ const blogRouter = require("./route/blogRoutes");
 const tourRouter = require("./route/tourRouters");
 const packageRouter = require("./route/packageRoutes");
 const spotRouter = require("./route/spotRoutes");
+const documentRouter = require("./route/documentRoutes");
+const visaRouter = require("./route/visaRoutes");
+const chatRouter = require("./route/chatRoutes");
 const cors = require('cors');
 require('dotenv').config();
 const { ensureSeeded } = require('./controller/blogController');
@@ -32,9 +35,16 @@ app.use("/api/blogs", blogRouter);
 app.use("/api/tours", tourRouter);
 app.use("/api/packages", packageRouter);
 app.use('/api/spots', spotRouter);
+app.use('/api/documents', documentRouter);
+app.use('/api/visa', visaRouter);
+app.use('/api/chat', chatRouter);
 
 // -------------------------------
-const port = 8080;
+const port = Number(process.env.PORT) || 8080;
+
+app.get('/', (req, res) => {
+    res.status(200).send('WanderGo backend is running. See /api/* for endpoints.');
+});
 
 app.listen(port, () => {
     console.log(`Listening on port ${port}!`);

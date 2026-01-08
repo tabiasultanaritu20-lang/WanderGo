@@ -53,6 +53,14 @@ const packageSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    duration: {
+        type: String,
+        trim: true
+    },
+    date: {
+        type: String,
+        trim: true
+    },
     imageUrl: {
         type: String,
         trim: true
@@ -62,4 +70,3 @@ const packageSchema = new mongoose.Schema({
 const PackageType = mongoose.model('PackageType', packageSchema);
 
 module.exports = PackageType;
-

@@ -4,6 +4,7 @@ const c = require('../controller/spotController');
 
 router.get('/', c.listSpots);
 router.post('/', c.createSpot);
+router.delete('/:id', c.deleteSpot);
 router.post('/seed', c.seedSpots);
 
 module.exports = router;

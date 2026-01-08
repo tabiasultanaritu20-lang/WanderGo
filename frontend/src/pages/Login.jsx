@@ -4,7 +4,7 @@ import quotes from "../utils/quotes";
 import { useNavigate, Link } from "react-router-dom";
 
 const Login = ({
-                   action = "http://localhost:8080/api/user/login",
+                   action = "/api/user/login",
                    onSuccess,
                }) => {
     const [form, setForm] = useState({email: "", password: ""});
@@ -43,8 +43,14 @@ const Login = ({
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(form),
             });
-            const data = await res.json();          // get response JSON
-            localStorage.setItem("token", data.token); // store token
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.message || "Login failed. Please try again.");
+            }
+            if (!data?.token || typeof data.token !== "string") {
+                throw new Error("Login failed. Please try again.");
+            }
+            localStorage.setItem("token", data.token);
             onSuccess?.();
             setForm({ email: "", password: "" });
             navigate("/create-tour");

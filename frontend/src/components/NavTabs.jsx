@@ -9,7 +9,8 @@ const items = [
   { key: "profile", label: "Profile", disabled: true },
   { key: "blogs", label: "Blog Feed", to: "/blogs" },
   { key: "emergency", label: "Emergency Hub", to: "/emergency" },
-  { key: "spots", label: "Spot Directory", to: "/spots" }
+  { key: "spots", label: "Spot Directory", to: "/spots" },
+  { key: "visa", label: "Visa & Docs", to: "/visa-docs" }
 ]
 
 export default function NavTabs() {

@@ -78,7 +78,7 @@ function CreateTourForm({ token: initialToken }) {
 
     try {
       const res = await axios.post(
-          `http://localhost:8080/api/tours/${agencyId}/tours`,
+          `/api/tours/${agencyId}/tours`,
           formData,
           {
             headers: {

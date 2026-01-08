@@ -4,7 +4,9 @@ import countries from "../utils/country";
 import quotes from "../utils/quotes";
 import { Link, useNavigate } from "react-router-dom";
 
-const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess }) => {
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
+const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -31,7 +33,7 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
         if (!/^\+?[0-9\-()\s]{6,}$/.test(form.number)) return false;
         if (!countries.includes(form.country)) return false;
         return true;
-    }, [form.name, form.email, form.password.length, form.number, form.country, form.role]);
+    }, [form.name, form.email, form.password.length, form.number, form.country]);
 
     const onChange = (e) => {
         const { name, value } = e.target;
@@ -63,6 +65,12 @@ const Signup = ({ action = "http://localhost:8080/api/user/register", onSuccess 
                 const data = await res.json().catch(() => ({}));
                 throw new Error(data?.message || "Signup failed. Please try again.");
             }
+
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
+            
             onSuccess?.();
             setForm({
                 name: "",

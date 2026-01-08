@@ -5,7 +5,9 @@ const authMiddleware = (req, res, next) => {
     if (!token) return res.status(401).json({ message: "No token" });
 
     try {
-        req.user = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Normalize token payload: if nested in playLoad, flatten it
+        req.user = decoded.playLoad ? { ...decoded, ...decoded.playLoad } : decoded;
         next();
     } catch (err) {
         res.status(403).json({ message: err.message });
@@ -21,7 +23,8 @@ const adminOnly = (req, res, next) => {
 };
 
 const Agency_And_Admin = (req, res, next) => {
-    const role = req.user.playLoad.role;
+    // Role is now directly available on req.user due to normalization above
+    const role = req.user.role;
 
     if (role !== "agency" && role !== "admin") {
         return res.status(403).json({ message: "Access denied. Admin and Agency only." });

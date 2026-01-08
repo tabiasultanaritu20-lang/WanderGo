@@ -4,7 +4,7 @@ import BlogCard from '../components/BlogCard.jsx';
 import CreateBlogBanner from '../components/CreateBlogBanner.jsx';
 import './TravelBlogFeed.css'; // page-specific styles
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE || '/api';
 
 const TravelBlogFeed = () => {
   const [blogs, setBlogs] = useState([]);

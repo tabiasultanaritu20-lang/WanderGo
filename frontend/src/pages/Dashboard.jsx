@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Input from '../components/Input.jsx';
+
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
 function Dashboard() {
     const [sortBy, setSortBy] = useState('price');
@@ -21,6 +23,26 @@ function Dashboard() {
         return { ...p, ratingAvg: newAvg, ratingCount: count + 1 }
       }))
     }
+
+    useEffect(() => {
+      let cancelled = false
+      ;(async () => {
+        try {
+          const r = await fetch(`${API_BASE}/packages`)
+          const j = await r.json()
+          const rows = j && typeof j === 'object' && Array.isArray(j.data) ? j.data : []
+          if (cancelled) return
+          setUserPackages(
+            rows.map((p) => ({
+              ...(p && typeof p === 'object' ? p : {}),
+              ratingAvg: Number(p?.ratingAvg || 0),
+              ratingCount: Number(p?.ratingCount || 0),
+            }))
+          )
+        } catch { void 0 }
+      })()
+      return () => { cancelled = true }
+    }, [])
 
     // Demo tours data
     const [tours, setTours] = useState([
@@ -178,9 +200,9 @@ function Dashboard() {
                 </div>
             </nav>
 
-            <div className="relative max-w-10xl mx-auto px-9 flex gap-10">
+            <div className="relative max-w-10xl mx-auto px-9 flex items-start gap-10">
                 {/* Left Sidebar */}
-                <aside className="hidden lg:block w-60 bg-white/75 backdrop-blur-md border-r border-slate-200/60 min-h-[calc(50vh-73px)] p-4 rounded-xl">
+                <aside className="hidden lg:block w-60 bg-white/75 backdrop-blur-md border-r border-slate-200/60 p-4 rounded-xl h-fit">
                     <div className="space-y-6">
                         {/* Filters Section */}
                         <div>
@@ -295,10 +317,16 @@ function Dashboard() {
                                   date: newPkg.date
                                 }
                                 try {
-                                  const r = await fetch('http://localhost:8080/api/packages', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
+                                  const r = await fetch(`${API_BASE}/packages`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
                                   const j = await r.json()
-                                  const created = { ratingAvg:0, ratingCount:0, ...(j.data || body) }
-                                  setUserPackages(u=>[{ _id: Date.now(), ...created }, ...u])
+                                  if (!r.ok) {
+                                    alert((j && typeof j.message === 'string' && j.message) ? j.message : 'Failed to create package')
+                                    return
+                                  }
+                                  const serverPkg = j && typeof j === 'object' ? j.data : null
+                                  const pkgId = serverPkg && typeof serverPkg === 'object' && serverPkg._id ? serverPkg._id : Date.now()
+                                  const created = { ...body, ...(serverPkg || {}), ratingAvg:0, ratingCount:0, _id: pkgId }
+                                  setUserPackages(u=>[created, ...u])
                                   setShowAdd(false)
                                   setNewPkg({ title: '', destinationCountry: '', destinationCity: '', price: '', imageUrl: '', features: '', duration:'', date:'' })
                                 } catch (e) { console.error(e) }
@@ -313,18 +341,25 @@ function Dashboard() {
                     {/* Cards Grid (tours + user packages) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
                       {displayCards.map((card) => (
-                        <div key={`${card.kind}-${card.id}`} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition group">
+                        <div key={`${card.kind}-${card.id}`} className="bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col md:h-[32rem]">
                           <div className="relative h-56 overflow-hidden">
-                            {card.imageUrl && (
-                              <img src={card.imageUrl} alt={card.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                            {card.imageUrl ? (
+                              <img src={card.imageUrl} alt={card.title} className="block w-full h-full object-cover transition-transform duration-300" />
+                            ) : (
+                              <div className="w-full h-full bg-slate-100" />
                             )}
                             <button
                               onClick={async () => {
                                 try {
                                   if (card.kind === 'pkg') {
-                                    await fetch(`http://localhost:8080/api/packages/${card.id}`, { method: 'DELETE' })
+                                    const r = await fetch(`${API_BASE}/packages/${card.id}`, { method: 'DELETE' })
+                                    if (!r.ok) throw new Error('delete_failed')
                                   }
-                                } catch (e) { console.error(e) }
+                                } catch (e) {
+                                  console.error(e)
+                                  if (card.kind === 'pkg') alert('Failed to delete package')
+                                  return
+                                }
                                 if (card.kind === 'tour') {
                                   setTours((prev) => prev.filter((t) => t.id !== card.id))
                                 } else {
@@ -339,7 +374,7 @@ function Dashboard() {
                               </svg>
                             </button>
                           </div>
-                          <div className="p-7">
+                          <div className="p-7 flex-1 flex flex-col">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-xs font-medium text-slate-500">{card.city}{card.country ? `, ${card.country}` : ''}</span>
                               {card.kind === 'tour' && (
@@ -360,7 +395,7 @@ function Dashboard() {
                                 </div>
                               )}
                             </div>
-                            <h3 className="text-lg font-semibold text-slate-900 mb-2">{card.title}</h3>
+                            <h3 className="text-lg font-semibold text-slate-900 mb-2 min-h-[3.25rem] leading-snug">{card.title}</h3>
                             {(card.kind === 'tour' || card.kind === 'pkg') && (
                               <div className="flex items-center gap-4 text-xs text-slate-500 mb-3">
                                 <span className="flex items-center gap-1">
@@ -377,14 +412,14 @@ function Dashboard() {
                                 </span>
                               </div>
                             )}
-                            {card.kind === 'pkg' && card.features && card.features.length > 0 && (
-                              <div className="mb-3 flex flex-wrap gap-2">
-                                {card.features.map((f) => (
+                            {card.kind === 'pkg' && (
+                              <div className="mb-3 flex flex-wrap gap-2 min-h-[2.25rem] max-h-[2.25rem] overflow-hidden">
+                                {(card.features || []).map((f) => (
                                   <span key={f} className="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">{f}</span>
                                 ))}
                               </div>
                             )}
-                            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                            <div className="mt-auto flex items-center justify-between pt-3 border-t border-slate-100">
                               <div>
                                 <span className="text-xs text-slate-500">From</span>
                                 <p className="text-xl font-bold text-slate-900">${card.price}</p>

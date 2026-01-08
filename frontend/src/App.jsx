@@ -11,11 +11,14 @@ import TravelBlogFeed from "../src/pages/TravelBlogFeed.jsx";
 import NavTabs from "../src/components/NavTabs.jsx";
 import Home from "../src/pages/Home.jsx";
 import SpotDirectory from "../src/pages/SpotDirectory.jsx";
+import VisaDocs from "../src/pages/VisaDocs.jsx";
+import Chatbot from "../src/components/Chatbot.jsx";
 
 function App() {
     return (
         <BrowserRouter>
             <NavTabs />
+            <Chatbot />
             <Routes>
                 <Route path="/" element={<Navigate to="/login" replace />} />
                 <Route path="/login" element={<Login />} />
@@ -28,6 +31,7 @@ function App() {
                 <Route path="/blogs" element={<TravelBlogFeed />} />
                 <Route path="/home" element={<Home />} />
                 <Route path="/spots" element={<SpotDirectory />} />
+                <Route path="/visa-docs" element={<VisaDocs />} />
                 {/* 404 fallback */}
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>

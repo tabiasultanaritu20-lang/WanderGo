@@ -44,14 +44,13 @@ const registerUser = async (req, res) => {
 
         await user.save();
 
-        const playLoad={
-            id: user.id,
-            email:user.email,
-            role:user.role
-        }
         //  5. Generate JWT token
         const token = jwt.sign(
-            { playLoad },
+            { 
+                id: user.id,
+                email: user.email,
+                role: user.role 
+            },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );

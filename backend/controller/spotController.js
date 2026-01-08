@@ -36,6 +36,17 @@ exports.createSpot = async (req, res) => {
   }
 };
 
+exports.deleteSpot = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const spot = await Spot.findByIdAndDelete(id);
+    if (!spot) return res.status(404).json({ message: 'Spot not found' });
+    res.json({ message: 'deleted', data: spot });
+  } catch (err) {
+    res.status(500).json({ message: 'server error', error: err.message });
+  }
+};
+
 exports.seedSpots = async (req, res) => {
   try {
     const count = await Spot.countDocuments();

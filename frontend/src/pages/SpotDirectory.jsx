@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Input from '../components/Input.jsx'
 
-const API = 'http://localhost:8080/api/spots'
+const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
 export default function SpotDirectory() {
   const [list, setList] = useState([])
@@ -17,33 +17,58 @@ export default function SpotDirectory() {
   const [modalSpot, setModalSpot] = useState(null)
 
   const canSearch = useMemo(() => true, [])
+  const didMount = useRef(false)
 
-  const load = async () => {
+  const deleteSpot = async (spotId) => {
+    if (!spotId) return
+    try {
+      const r = await fetch(`${API_BASE}/spots/${spotId}`, { method: 'DELETE' })
+      if (!r.ok) {
+        let msg = 'Failed to delete spot'
+        try {
+          const j = await r.json()
+          if (j && typeof j.message === 'string' && j.message) msg = j.message
+        } catch { void 0 }
+        throw new Error(msg)
+      }
+      setList((prev) => prev.filter((s) => s?._id !== spotId))
+      setModalSpot((prev) => (prev && prev._id === spotId ? null : prev))
+    } catch (e) {
+      console.error(e)
+      alert('Failed to delete spot')
+    }
+  }
+
+  const load = useCallback(async () => {
     if (!canSearch) return
     setLoading(true)
     setError('')
     try {
-      const u = new URL(API)
-      if (q) u.searchParams.set('q', q)
-      if (country) u.searchParams.set('country', country)
-      if (city) u.searchParams.set('city', city)
-      if (category) u.searchParams.set('category', category)
-      if (tag) u.searchParams.set('tag', tag)
-      const r = await fetch(u.toString())
+      const p = new URLSearchParams()
+      if (q) p.set('q', q)
+      if (country) p.set('country', country)
+      if (city) p.set('city', city)
+      if (category) p.set('category', category)
+      if (tag) p.set('tag', tag)
+      const qs = p.toString()
+      const r = await fetch(`${API_BASE}/spots${qs ? `?${qs}` : ''}`)
       const j = await r.json()
       setList(Array.isArray(j.data) ? j.data : [])
     } catch {
       setError('Failed to load spots')
     }
     setLoading(false)
-  }
-
-  useEffect(() => { load() }, [])
+  }, [canSearch, q, country, city, category, tag])
 
   useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true
+      load()
+      return
+    }
     const id = setTimeout(() => { load() }, 300)
     return () => clearTimeout(id)
-  }, [q, country, city, category, tag])
+  }, [load])
 
   
 
@@ -54,12 +79,12 @@ export default function SpotDirectory() {
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1505118380757-91f5f5632de0?ixlib=rb-4.1.0&auto=format&fit=crop&q=80&w=1260')" }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
-      <div className="relative max-w-6xl mx-auto p-4 flex">
-        <aside className="hidden lg:block w-64 bg-white/80 backdrop-blur-md border-r border-slate-200/60 min-h-[calc(100vh-73px)] p-6 rounded-xl">
-          <div className="space-y-6">
+      <div className="relative max-w-10xl mx-auto p-5 flex items-start gap-13">
+        <aside className="hidden lg:block w-60 bg-white/80 backdrop-blur-md border-r border-slate-200/60 p-7 rounded-lg h-fit">
+          <div className="space-y-9">
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Search</h3>
-              <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-slate-700 mb-8">Search</h3>
+              <div className="space-y-5">
                 <Input label="Search" name="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} />
                 <Input label="Country" name="country" placeholder="Country" value={country} onChange={(e) => setCountry(e.target.value)} />
                 <Input label="City" name="city" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} />
@@ -82,7 +107,7 @@ export default function SpotDirectory() {
         </aside>
 
         <main className="flex-1 p-6">
-          <h1 className="text-2xl font-semibold">Tourist Spot Directory</h1>
+          <h1 className="text-2xl font-semibold text-white">Tourist Spot Directory</h1>
 
         {showAdd && (
           <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6">
@@ -114,7 +139,7 @@ export default function SpotDirectory() {
                       lng: newSpot.lng ? Number(newSpot.lng) : undefined
                     }
                     try {
-                      const r = await fetch(API, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
+                      const r = await fetch(`${API_BASE}/spots`, { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(body) })
                       await r.json()
                       setShowAdd(false)
                       setNewSpot({ name:'', country:'', city:'', category:'', tagString:'', description:'', lat:'', lng:'', photoUrl:'' })
@@ -131,18 +156,30 @@ export default function SpotDirectory() {
         {loading && <p className="mt-4">Loading…</p>}
         {error && <p className="mt-4 text-rose-600">{error}</p>}
 
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
           {list.map((s) => (
-            <div key={s._id} onClick={()=>setModalSpot(s)} className="cursor-pointer bg-white/70 backdrop-blur-md rounded-xl border border-slate-200/60 shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-2xl transform transition-transform hover:-translate-y-0.5">
+            <div key={s._id} onClick={()=>setModalSpot(s)} className="cursor-pointer bg-white/70 backdrop-blur-md rounded-xl border border-slate-200/60 shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-2xl">
               {s.photos && s.photos[0] && (
-                <img src={s.photos[0]} alt={s.name} className="w-full h-40 object-cover" />
+                <img src={s.photos[0]} alt={s.name} className="block w-full h-64 object-cover" />
               )}
               <div className="p-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">{s.name}</h3>
-                  {typeof s.lat === 'number' && typeof s.lng === 'number' && (
-                    <a className="text-sm text-slate-700 hover:underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}>Map</a>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {typeof s.lat === 'number' && typeof s.lng === 'number' && (
+                      <a className="text-sm text-slate-700 hover:underline" target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${s.lat},${s.lng}`}>Map</a>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); deleteSpot(s._id) }}
+                      className="p-2 rounded-full hover:bg-red-50"
+                      title="Delete"
+                      aria-label="Delete spot"
+                    >
+                      <svg className="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3m-4 0h14" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-600 truncate">{s.description}</p>
                 <div className="mt-2 text-xs text-slate-500">{s.city}, {s.country} • {s.category}</div>

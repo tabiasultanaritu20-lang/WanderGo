@@ -2,12 +2,12 @@ const PackageType = require('../model/packageModel');
 
 exports.createPackage = async (req, res) => {
   try {
-    const { title, features, price, destinationCountry, destinationCity, imageUrl } = req.body;
+    const { title, features, price, destinationCountry, destinationCity, imageUrl, duration, date } = req.body;
     if (!title || price === undefined || !destinationCountry || !destinationCity) {
       return res.status(400).json({ message: 'title, price, destinationCountry, destinationCity are required' });
     }
 
-    const pkg = await PackageType.create({ title, features, price, destinationCountry, destinationCity, imageUrl });
+    const pkg = await PackageType.create({ title, features, price, destinationCountry, destinationCity, imageUrl, duration, date });
     res.status(201).json({ message: 'Package created', data: pkg });
   } catch (err) {
     console.error('Error creating package:', err);
@@ -60,3 +60,14 @@ exports.recommendPackages = async (req, res) => {
   }
 };
 
+exports.deletePackage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pkg = await PackageType.findByIdAndDelete(id);
+    if (!pkg) return res.status(404).json({ message: 'Package not found' });
+    res.json({ message: 'Package deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting package:', err);
+    res.status(500).json({ message: 'Server error while deleting package', error: err.message });
+  }
+};
