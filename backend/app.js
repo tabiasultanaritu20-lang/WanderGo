@@ -17,7 +17,6 @@ const visaRouter = require("./route/visaRoutes");
 const chatRouter = require("./route/chatRoutes");
 const emergencyRouter = require("./route/emergencyRoutes");
 const safetyRouter = require("./route/safetyRoutes");
-const { ensureSeeded } = require('./controller/blogController');
 const { ensureSeededEmergency } = require('./controller/emergencyController');
 
 // -------------------------------
@@ -39,8 +38,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Connect to DB
 db();
 
-// Seed defaults (blogs, emergency contacts)
-ensureSeeded();
+// Seed defaults (emergency contacts)
 ensureSeededEmergency();
 
 // -------------------------------
