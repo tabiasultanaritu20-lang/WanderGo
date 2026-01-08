@@ -3,13 +3,17 @@ import toast, { Toaster } from "react-hot-toast";
 import { baseApi } from "../utils/baseApi.js";
 import Input from "../components/Input.jsx";
 import quotes from "../utils/quotes";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 
 const Login = ({ onSuccess }) => {
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
     const [quoteIndex, setQuoteIndex] = useState(0);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // 1. Check if there is a saved location to go back to (e.g., /blog/123)
+    const from = location.state?.from?.pathname || "/dashboard";
 
     useEffect(() => {
         const id = setInterval(
@@ -20,7 +24,6 @@ const Login = ({ onSuccess }) => {
     }, []);
 
     const canSubmit = useMemo(() => {
-        // Simple email regex
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i.test(form.email)) return false;
         return form.password.length >= 6;
     }, [form.email, form.password.length]);
@@ -39,30 +42,20 @@ const Login = ({ onSuccess }) => {
 
         try {
             setLoading(true);
-
-            // Call the login endpoint
             const res = await baseApi.post("/user/login", form);
-
-            // Destructure response based on your new Controller structure
             const { token, user, message } = res.data;
 
-            // 1. Store Token
             localStorage.setItem("token", token);
-
-            // 2. Store User Data (New step: helps with Navbar/Profile UI immediately)
-            // Your controller returns: { id, name, email, role, profilePictureUrl, ... }
             localStorage.setItem("user", JSON.stringify(user));
 
             onSuccess?.();
             setForm({ email: "", password: "" });
 
-            toast.success(message || "Login successful! Redirecting...");
+            toast.success(message || "Login successful!");
 
-            // Optional: Redirect based on role if needed
-            // if (user.role === 'admin') navigate('/admin-dashboard');
-
+            // 2. Redirect to the saved location (Blog) OR Dashboard
             setTimeout(() => {
-                navigate("/dashboard");
+                navigate(from, { replace: true });
             }, 500);
 
         } catch (err) {
@@ -70,7 +63,6 @@ const Login = ({ onSuccess }) => {
                 err.response?.data?.message ||
                 err.message ||
                 "Login failed. Please check your credentials.";
-
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -215,7 +207,6 @@ const Login = ({ onSuccess }) => {
                         </button>
                     </form>
 
-                    {/* Mobile welcome + quotes */}
                     <div className="mt-8 md:hidden text-center">
                         <h1 className="text-xl font-semibold text-slate-900">
                             Welcome to WenderGo

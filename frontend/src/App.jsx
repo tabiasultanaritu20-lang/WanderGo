@@ -12,32 +12,45 @@ import BlogDetails from "./pages/BlogDetails.jsx";
 import BlogForm from "./pages/BlogForm.jsx";
 import SavedBlogs from "./pages/SavedBlogs.jsx";
 import CreateTourForm from "../src/pages/CreateTourForm.jsx";
+import Profile from "./pages/Profile.jsx";
 
 // --- Components ---
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 import UserDashboard from "./pages/userDashboard/UserDashboard.jsx";
-import Profile from "./pages/Profile.jsx";
-import UserPanel from "./pages/userDashboard/UserDashboard.jsx"; // Import the new component
 
 function App() {
+    // Check if user is logged in
+    const isAuthenticated = !!localStorage.getItem("token");
+
     return (
         <BrowserRouter>
             <Routes>
-                {/* --- Public Routes (Accessible by anyone) --- */}
+                {/* --- Public Routes --- */}
+                
+                {/* FIX: Smart Home Route. 
+                    If logged in -> Go to Dashboard. 
+                    If not -> Go to Login. 
+                    This stops the "Wheel redirect loop". 
+                */}
+                <Route 
+                    path="/" 
+                    element={isAuthenticated ? <MainDash /> : <Login />} 
+                />
+
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
-
-                {/* Optional: Leave Wheel public, or move to protected if needed */}
                 <Route path="/wheel" element={<DestinationWheel />} />
 
                 {/* --- Protected Routes (Login required) --- */}
+                {/* This uses the Updated ProtectedRoute with <Outlet /> */}
                 <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<MainDash />} />
                     <Route path="/EmergencyHub" element={<EmergencyHub />} />
+                    
+                    {/* User Dashboard & Profile */}
                     <Route path="/user-dashboard" element={<UserDashboard />} />
+                    <Route path="/userPanel" element={<UserDashboard />} /> {/* Duplicate handled */}
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/userPanel" element={<UserPanel />} />
 
                     {/* Blog Routes */}
                     <Route path="/blog" element={<TravelBlogFeed />} />
@@ -54,11 +67,10 @@ function App() {
                         path="/create-tour"
                         element={<CreateTourForm token={localStorage.getItem("token")} />}
                     />
-
                 </Route>
 
                 {/* 404 Fallback */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     )
