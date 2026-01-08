@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import BlogCard from "../components/BlogCard"; // Reusing your nice card!
-import { Search, MapPin, Filter, Plus, Home } from "lucide-react";
+import BlogCard from "../components/BlogCard"; 
+import { Search, MapPin, Plus, Home } from "lucide-react";
 
-const API_BASE_URL = 'http://localhost:8080/api';
+// REVERTED: Pointing directly to the blogs endpoint again
+const API_URL = "http://localhost:8080/api/blogs";
 
 const TravelBlogFeed = () => {
   const navigate = useNavigate();
@@ -44,7 +45,6 @@ const TravelBlogFeed = () => {
   const handleClear = () => {
     setCategory("");
     setLocation("");
-    // Trigger fetch immediately after clearing state is tricky, so we reload or specific fetch
     window.location.reload(); 
   };
 
