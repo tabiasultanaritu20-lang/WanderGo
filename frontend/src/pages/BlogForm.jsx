@@ -1,173 +1,251 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
-import "./TravelBlogFeed.css";
+import { ArrowLeft, Upload, Save, Image as ImageIcon, Plus } from "lucide-react";
 
 const API_URL = "http://localhost:8080/api/blogs";
 
 const BlogForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const isEdit = Boolean(id);
 
-  const [title, setTitle] = useState("");
-  const [authorName, setAuthorName] = useState("");
-  const [location, setLocation] = useState("");
-  const [categoriesText, setCategoriesText] = useState("");
-  const [content, setContent] = useState("");
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    location: "",
+    categories: "",
+  });
 
-  const [imageFiles, setImageFiles] = useState([]);
+  // Separate states for Cover Image and Gallery Images
+  const [coverImage, setCoverImage] = useState(null);
+  const [galleryImages, setGalleryImages] = useState([]);
+  
+  // Preview states for UI feedback
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [galleryPreviews, setGalleryPreviews] = useState([]);
 
   const [loading, setLoading] = useState(false);
 
-  const token = localStorage.getItem("token");
-
   useEffect(() => {
-    if (!id) return;
+    if (isEdit) {
+      axios.get(`${API_URL}/${id}`).then((res) => {
+        const d = res.data.data || res.data;
+        setFormData({
+          title: d.title || "",
+          content: d.content || "",
+          location: d.location || "",
+          categories: (d.categories || []).join(", "),
+        });
+        // Note: We don't preload file inputs with existing images because file inputs are read-only for security.
+        // You would typically show existing images separately if you wanted to allow deleting them.
+      });
+    }
+  }, [id, isEdit]);
 
-    const load = async () => {
-      try {
-        setLoading(true);
-        const res = await axios.get(`${API_URL}/${id}`);
-        const b = res.data?.data || res.data;
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        setTitle(b?.title || "");
-        setAuthorName(b?.authorName || "");
-        setLocation(b?.location || "");
-        setCategoriesText(Array.isArray(b?.categories) ? b.categories.join(", ") : (b?.categories || ""));
-        setContent((b?.content || b?.body || "").toString());
-      } catch (e) {
-        console.error(e);
-        alert("Failed to load blog");
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Handle Cover Image Selection
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCoverImage(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
 
-    load();
-  }, [id]);
+  // Handle Gallery Images Selection
+  const handleGalleryChange = (e) => {
+    const files = Array.from(e.target.files);
+    setGalleryImages((prev) => [...prev, ...files]);
+    
+    // Create previews
+    const newPreviews = files.map(file => URL.createObjectURL(file));
+    setGalleryPreviews((prev) => [...prev, ...newPreviews]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token) return alert("Login required");
+    setLoading(true);
+    const token = localStorage.getItem("token");
 
-    if (!title.trim() || !content.trim()) return alert("Title and content required");
+    const data = new FormData();
+    data.append("title", formData.title);
+    data.append("content", formData.content);
+    data.append("location", formData.location);
+    data.append("categories", formData.categories);
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("authorName", authorName);
-    formData.append("location", location);
-    formData.append("content", content);
-    formData.append("categories", categoriesText);
+    // IMPORTANT: Append Cover Image FIRST so it's always index 0 on backend
+    if (coverImage) {
+      data.append("images", coverImage);
+    }
 
-    imageFiles.forEach((file) => {
-      formData.append("images", file);
-    });
+    // Append Gallery Images
+    for (let i = 0; i < galleryImages.length; i++) {
+      data.append("images", galleryImages[i]);
+    }
 
     try {
-      setLoading(true);
-
-      const headers = { Authorization: `Bearer ${token}` };
-
-      if (id) {
-        await axios.put(`${API_URL}/${id}`, formData, { headers });
+      if (isEdit) {
+        await axios.put(`${API_URL}/${id}`, data, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        });
       } else {
-        await axios.post(API_URL, formData, { headers });
+        await axios.post(API_URL, data, {
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" },
+        });
       }
-
       navigate("/blog");
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Server error while creating blog");
+      console.error("Error saving blog:", err);
+      alert("Failed to save blog.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="travel-blog-feed">
-      <button onClick={() => navigate("/blog")} style={{ marginBottom: 16 }}>
-        ← Back
-      </button>
+    <div className="min-h-screen bg-slate-50 py-10 px-4">
+      <div className="max-w-3xl mx-auto">
+        <button onClick={() => navigate("/blog")} className="flex items-center text-slate-500 hover:text-slate-800 mb-6 transition">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Feed
+        </button>
 
-      <div className="travel-blog-feed__card">
-        <h2 style={{ marginTop: 0 }}>{id ? "Edit Blog" : "Create New Blog"}</h2>
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-8 py-6 border-b border-slate-100 bg-slate-50/50">
+            <h1 className="text-2xl font-bold text-slate-800">
+              {isEdit ? "Edit Story" : "Write a New Story"}
+            </h1>
+          </div>
 
-        <form onSubmit={handleSubmit} className="blog-form">
-          <div className="blog-form__row">
-            <div className="blog-form__field">
-              <label>Title *</label>
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            
+            {/* 1. Title */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Title</label>
               <input
-                type="text"
-                placeholder="Trip to Cox's Bazar"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                placeholder="Give your story a catchy title..."
                 required
               />
             </div>
 
-            <div className="blog-form__field">
-              <label>Author</label>
-              <input
-                type="text"
-                placeholder="Your name"
-                value={authorName}
-                onChange={(e) => setAuthorName(e.target.value)}
+            {/* 2. Location & Categories */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Location</label>
+                <input
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="e.g., Bali, Indonesia"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Categories</label>
+                <input
+                  name="categories"
+                  value={formData.categories}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  placeholder="e.g., Beach, Food, Budget"
+                />
+              </div>
+            </div>
+
+            {/* 3. COVER IMAGE UPLOAD (Single) */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Main Cover Photo <span className="text-slate-400 font-normal">(Required)</span>
+              </label>
+              <div className="flex items-start gap-4">
+                <div className="relative w-full">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleCoverChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className={`border-2 border-dashed rounded-xl p-6 text-center transition ${coverPreview ? 'border-indigo-300 bg-indigo-50' : 'border-slate-300 hover:bg-slate-50'}`}>
+                    {coverPreview ? (
+                      <img src={coverPreview} alt="Cover Preview" className="h-48 w-full object-cover rounded-lg mx-auto" />
+                    ) : (
+                      <div className="flex flex-col items-center py-4">
+                        <ImageIcon className="w-8 h-8 text-slate-400 mb-2" />
+                        <span className="text-sm font-medium text-slate-600">Click to upload cover</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. GALLERY UPLOAD (Multiple) */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Gallery Photos <span className="text-slate-400 font-normal">(Optional)</span>
+              </label>
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 relative hover:bg-slate-50 transition">
+                 <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleGalleryChange}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div className="flex flex-col items-center justify-center pointer-events-none py-4">
+                    <Plus className="w-8 h-8 text-indigo-500 mb-2" />
+                    <span className="text-sm font-medium text-slate-700">Add more photos</span>
+                    <span className="text-xs text-slate-500">You can select multiple files</span>
+                  </div>
+              </div>
+
+              {/* Gallery Previews */}
+              {galleryPreviews.length > 0 && (
+                <div className="grid grid-cols-4 gap-2 mt-4">
+                  {galleryPreviews.map((src, idx) => (
+                    <img key={idx} src={src} alt={`Gallery ${idx}`} className="w-full h-24 object-cover rounded-lg border border-slate-200" />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 5. Content */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Your Story</label>
+              <textarea
+                name="content"
+                value={formData.content}
+                onChange={handleChange}
+                className="w-full h-60 px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed"
+                placeholder="Share your experience..."
               />
             </div>
-          </div>
 
-          <div className="blog-form__row">
-            <div className="blog-form__field">
-              <label>Location</label>
-              <input
-                type="text"
-                placeholder="Cox's Bazar, Bangladesh"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-              />
+            {/* Submit */}
+            <div className="pt-6 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-2 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 disabled:opacity-50"
+              >
+                {loading ? "Saving..." : (
+                  <>
+                    <Save className="w-5 h-5" />
+                    Publish Story
+                  </>
+                )}
+              </button>
             </div>
 
-            <div className="blog-form__field">
-              <label>Categories (comma separated)</label>
-              <input
-                type="text"
-                placeholder="Beach, Food"
-                value={categoriesText}
-                onChange={(e) => setCategoriesText(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="blog-form__field">
-            <label>Images </label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={(e) => setImageFiles(Array.from(e.target.files || []))}
-            />
-            {imageFiles.length > 0 && (
-              <small style={{ display: "block", marginTop: 6 }}>
-                Selected: {imageFiles.length} file(s)
-              </small>
-            )}
-          </div>
-
-          <div className="blog-form__field">
-            <label>Content *</label>
-            <textarea
-              rows="8"
-              placeholder="Write your travel story..."
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" disabled={loading}>
-            {loading ? "Publishing..." : id ? "Update" : "Publish"}
-          </button>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   );

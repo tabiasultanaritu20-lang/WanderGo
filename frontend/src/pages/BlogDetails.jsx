@@ -120,12 +120,26 @@ const BlogDetails = () => {
           <span className="travel-blog-feed__author">by {blog.authorName}</span>
         </div>
         {imgSrc && <img src={imgSrc} alt={blog.title} style={{ width: '100%', borderRadius: 12 }} />}
-        <p style={{ whiteSpace: "pre-wrap", marginTop: 20 }}>{blog.content}</p>
+        
+        <p style={{ 
+            marginTop: 20, 
+            lineHeight: '1.8', 
+            color: '#374151', 
+            whiteSpace: 'pre-wrap', 
+            fontSize: '1.1rem' 
+        }}>
+          {blog.content}
+        </p>
+
         <div className="travel-blog-feed__actions" style={{ marginTop: 20, display: 'flex', gap: 10 }}>
           <button onClick={handleLike}>{blog.liked ? "💔 Unlike" : "❤️ Like"} ({blog.likesCount})</button>
           <button onClick={handleSave}>{isSaved ? "🔖 Unsave" : "🔖 Save Later"}</button>
           <button onClick={handleShare}>📤 Share</button>
           <button onClick={handleCopy}>🔗 Copy</button>
+          
+          
+          <button onClick={() => navigate(`/blog/${id}/edit`)}>✏️ Edit</button>
+          
           <button onClick={handleDelete}>🗑 Delete</button>
         </div>
       </div>
@@ -148,4 +162,5 @@ const BlogDetails = () => {
 
 
 };
+
 export default BlogDetails;

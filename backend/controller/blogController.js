@@ -63,17 +63,31 @@ exports.createBlog = async (req, res) => {
   try {
     const { id: userId, name, email } = getUserFromReq(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
     const { title, content, authorName, location, categories } = req.body;
     const categoriesArr = categories ? categories.split(",").map((s) => s.trim()).filter(Boolean) : [];
+
+    // Handle Images
     const imageUrls = (req.files || []).map((f) => `/uploads/${f.filename}`);
-    const coverImageUrl = imageUrls[0] || "";
+    
+    // The first image in the list is the Cover. 
+    // The rest (plus the cover) are the gallery.
+    const coverImageUrl = imageUrls.length > 0 ? imageUrls[0] : "";
+    
     const blog = await Blog.create({
-      title, content, author: userId,
+      title,
+      content,
+      author: userId,
       authorName: (authorName && authorName.trim()) || name || email || "Anonymous Traveler",
-      location, categories: categoriesArr, coverImageUrl,
+      location,
+      categories: categoriesArr,
+      coverImageUrl,
+      images: imageUrls, // Store all images in the gallery array
     });
+
     res.status(201).json({ message: "Blog created", data: blog });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error while creating blog" });
   }
 };
@@ -82,22 +96,34 @@ exports.updateBlog = async (req, res) => {
   try {
     const { id: userId, role } = getUserFromReq(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
+
     const blog = await Blog.findById(req.params.id);
     if (!blog) return res.status(404).json({ message: "Blog not found" });
     if (!isOwnerOrAdmin(blog, userId, role)) return res.status(403).json({ message: "Not allowed" });
+
     const { title, content, authorName, location, categories } = req.body;
+
     if (title !== undefined) blog.title = title;
     if (content !== undefined) blog.content = content;
     if (authorName !== undefined) blog.authorName = authorName;
     if (location !== undefined) blog.location = location;
     if (categories !== undefined) {
-        blog.categories = typeof categories === "string" ? categories.split(",").map(c => c.trim()) : categories;
+      blog.categories = typeof categories === "string" ? categories.split(",").map(c => c.trim()) : categories;
     }
+
+    // Append new images if uploaded
     if (req.files && req.files.length) {
       const newUrls = req.files.map((f) => `/uploads/${f.filename}`);
+      
+      // Add to existing gallery
       blog.images = [...(blog.images || []), ...newUrls];
-      if (!blog.coverImageUrl) blog.coverImageUrl = blog.images[0] || "";
+
+      // If no cover image existed, make the first new one the cover
+      if (!blog.coverImageUrl) {
+        blog.coverImageUrl = newUrls[0];
+      }
     }
+
     await blog.save();
     res.json({ message: "Blog updated", data: blog });
   } catch (err) {
@@ -118,25 +144,20 @@ exports.deleteBlog = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting blog" });
   }
 };
+
 exports.getSavedBlogs = async (req, res) => {
   try {
-    const { id: userId } = getUserFromReq(req); 
+    const { id: userId } = getUserFromReq(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
-
     const user = await User.findById(userId).populate("savedBlogs");
-
     if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Return the array of full blog objects
-    res.json({
-      success: true,
-      data: user.savedBlogs || []
-    });
+    res.json({ success: true, data: user.savedBlogs || [] });
   } catch (err) {
     console.error("Error fetching saved blogs:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 exports.toggleLike = async (req, res) => {
   try {
     const { id: userId } = getUserFromReq(req);
@@ -203,7 +224,6 @@ exports.shareBlog = async (req, res) => {
   }
 };
 
-// NEW: Toggle Save Blog
 exports.toggleSaveBlog = async (req, res) => {
   try {
     const { id: userId } = getUserFromReq(req);

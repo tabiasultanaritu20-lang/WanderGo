@@ -8,6 +8,7 @@ const app = express();
 const db = require("./db/db");
 const userRouter = require("./route/userRouters");
 const blogRouter = require("./route/blogRoutes");
+const uploadRouter = require("./route/uploadRoutes");
 const tourRouter = require("./route/tourRouters");
 const reviewRouter = require("./route/reviews");
 const emergencyRouter = require("./route/emergencyRoutes");
