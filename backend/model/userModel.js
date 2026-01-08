@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// List from your old schema for validation
 const countries = [
     "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina",
     "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados",
@@ -29,10 +30,12 @@ const countries = [
 ];
 
 const userSchema = new mongoose.Schema({
+    // --- Identity ---
     name: {
         type: String,
         required: true,
-        trim: true
+        trim: true,
+        minlength: 2
     },
     email: {
         type: String,
@@ -46,21 +49,46 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength: 6
     },
+
+    // --- Role & Permissions ---
     role: {
         type: String,
         enum: ["user", "admin", "agency"],
-        default: "user"
+        default: "user",
+        required: true
     },
+
+    // --- Contact & Location (LEGACY SUPPORT) ---
+    // Kept as 'number' so old controllers don't break
     number: {
         type: String,
         required: true,
         trim: true
     },
+    // Kept at root level so old controllers don't break
     country: {
         type: String,
         enum: countries,
         required: true
     },
+    // Added 'city' at root level to match the flat structure of 'country'
+    city: {
+        type: String,
+        trim: true
+    },
+
+    // --- Profile Details (New Features) ---
+    profilePictureUrl: {
+        type: String,
+        default: ''
+    },
+    description: {
+        type: String,
+        maxlength: 500,
+        trim: true
+    },
+
+    // --- Commerce (Legacy Support) ---
     cart: [
         {
             productId: {
@@ -73,14 +101,65 @@ const userSchema = new mongoose.Schema({
             }
         }
     ],
-    // FEATURE: Saved Blogs Array
+
+    // --- Personalization (New) ---
+    favoriteTourCategories: [{
+        type: String,
+        trim: true
+    }],
+
+    // --- Rating System (New) ---
+    ratingsAverage: {
+        type: Number,
+        default: 0,
+        min: [0, 'Rating must be above 0'],
+        max: [5, 'Rating must be below 5.0'],
+        set: val => Math.round(val * 10) / 10
+    },
+    ratingsQuantity: {
+        type: Number,
+        default: 0
+    },
+
+    // --- Verification & Security (New) ---
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationData: {
+        status: {
+            type: String,
+            enum: ['unverified', 'pending', 'verified', 'rejected'],
+            default: 'unverified'
+        },
+        subscriptionExpiresAt: {
+            type: Date
+        },
+        stripeCustomerId: { type: String },
+        stripeSubscriptionId: { type: String },
+        documentType: {
+            type: String,
+            enum: ['nid', 'passport', 'other']
+        },
+        documentNumber: String,
+        documentUrl: String
+    },
     savedBlogs: [
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Blog"
         }
-    ]
-}, { timestamps: true });
+    ],
+    // --- Social Links (From New Schema) ---
+    socialLinks: {
+        facebook: String,
+        instagram: String,
+        website: String
+    }
+}, {
+    timestamps: true
+});
+
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

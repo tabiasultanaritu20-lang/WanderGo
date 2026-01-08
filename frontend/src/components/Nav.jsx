@@ -32,13 +32,13 @@ function Nav({ cartCount }) {
             Destination Wheel
           </Link>
 
-          <Link
-            to="/reviews"
-            className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-          >
-            <Star className="w-4 h-4" />
-            Reviews
-          </Link>
+          {/*<Link*/}
+          {/*  to="/reviews"*/}
+          {/*  className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"*/}
+          {/*>*/}
+          {/*  <Star className="w-4 h-4" />*/}
+          {/*  Reviews*/}
+          {/*</Link>*/}
 
           <Link
             to="/create-tour"
@@ -71,10 +71,10 @@ function Nav({ cartCount }) {
           </Link>
 
           <Link
-            to="/profile"
+            to="/userPanel"
             className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
           >
-            Profile
+            User Panel
           </Link>
         </div>
 

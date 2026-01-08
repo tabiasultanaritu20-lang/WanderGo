@@ -1,65 +1,70 @@
-const User=require("../model/userModel");
+const User = require("../model/userModel");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
-const bcrypt=require("bcrypt");
-const jwt = require( "jsonwebtoken");
-
+// ======================== REGISTER USER ========================
 const registerUser = async (req, res) => {
     try {
-        let { name, email, password, number, country, role, adminKey } = req.body;
+        // Destructure all possible input fields including new ones like 'city'
+        let { name, email, password, number, country, city, role, adminKey } = req.body;
 
-        //  1. Check if all required fields exist
-        if (!name || !email || !password || !number || !country || !role) {
-            return res.status(400).json({ message: "All fields are required" });
+        // 1. Check if all required fields exist (Added city if you want it required, otherwise remove it)
+        if (!name || !email || !password || !number || !country) {
+            return res.status(400).json({ message: "All required fields (name, email, password, number, country) must be provided" });
+        }
+
+        // 2. Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User with this email already exists" });
         }
 
         const requestedRole = (role || "user").toLowerCase();
 
-// handle admin role
+        // Handle admin role
         if (requestedRole === "admin") {
             if (adminKey !== process.env.ADMIN_ROLE) {
                 return res.status(403).json({ message: "Not allowed to create admin user" });
             }
             role = "admin";
         }
-
-// handle agency role (no adminKey required)
+        // Handle agency role
         else if (requestedRole === "agency") {
             role = "agency";
         }
-
-// default role
+        // Default role
         else {
             role = "user";
         }
 
-        //  3. Hash password
+        // 3. Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        //  4. Create new user
+        // 4. Create new user
         const user = new User({
             name,
             email,
             password: hashedPassword,
             number,
             country,
+            city, // Added city
             role
         });
 
         await user.save();
 
-        const playLoad={
-            id: user.id,
-            email:user.email,
-            role:user.role
-        }
-        //  5. Generate JWT token
+        // 5. Generate JWT token (Standardized Payload)
         const token = jwt.sign(
-            { playLoad },
+            {
+                id: user._id,
+                email: user.email,
+                role: user.role
+            },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
 
-        //  6. Send response
+        // 6. Send response
         res.status(201).json({
             message: "User registered successfully",
             user: {
@@ -69,7 +74,7 @@ const registerUser = async (req, res) => {
                 email: user.email,
                 number: user.number,
                 country: user.country,
-
+                city: user.city,
             },
             token,
         });
@@ -93,10 +98,12 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
 
+        // Generate Token (Matches Register Payload)
         const token = jwt.sign({
             id: user._id,
-            email:user.email,
-            role:user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+            email: user.email,
+            role: user.role
+        }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
         res.json({
             message: "Login successful",
@@ -106,7 +113,9 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 number: user.number,
                 country: user.country,
-                role: user.role
+                city: user.city,
+                role: user.role,
+                profilePictureUrl: user.profilePictureUrl
             },
             token,
         });
@@ -142,24 +151,79 @@ const getUserById = async (req, res) => {
 // ======================== UPDATE USER ========================
 const updateUser = async (req, res) => {
     try {
-        const { name, email, number, country } = req.body;
+        // 1. Check if req.body exists
+        // (Note: With FormData, if no text fields are sent, req.body might be empty object, which is fine)
+        if (!req.body && !req.file) {
+            return res.status(400).json({ message: "No data provided" });
+        }
 
+        // 2. Destructure fields
+        let {
+            name,
+            email,
+            number,
+            country,
+            city,
+            description,
+            socialLinks
+        } = req.body;
+
+        // 3. Parse 'socialLinks' if it comes as a string (from FormData)
+        if (typeof socialLinks === 'string') {
+            try {
+                socialLinks = JSON.parse(socialLinks);
+            } catch (e) {
+                console.error("Error parsing socialLinks:", e);
+                // Keep it undefined or set to empty object if parsing fails
+                socialLinks = undefined;
+            }
+        }
+
+        // 4. Construct the Update Object safely
+        // We only add fields if they are NOT undefined.
+        // This prevents overwriting existing data with empty values if the frontend didn't send them.
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (country) updateData.country = country;
+        if (city) updateData.city = city;
+        if (description) updateData.description = description;
+        if (socialLinks) updateData.socialLinks = socialLinks;
+
+        // --- PHONE NUMBER SYNC FIX ---
+        // Your schema has both 'number' (legacy) and 'phoneNumber' (new).
+        // Best practice: Update BOTH to keep them in sync.
+        if (number) {
+            updateData.number = number;      // Legacy field
+            updateData.phoneNumber = number; // New field
+        }
+
+        // 5. Handle Image File
+        if (req.file) {
+            // Construct the full URL for the uploaded image
+            // NOTE: In production, avoid hardcoding 'localhost'. Use process.env.BASE_URL
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            updateData.profilePictureUrl = `${baseUrl}/uploads/${req.file.filename}`;
+        }
+
+        // 6. Update Database
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            { name, email, number, country },
-            { new: true }
+            updateData,
+            { new: true, runValidators: true }
         ).select("-password");
 
-        if (!updatedUser) return res.status(404).json({ message: "User not found" });
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         res.json({ message: "User updated successfully", updatedUser });
+
     } catch (error) {
         console.error("Update User Error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
-};
-
-// ======================== DELETE USER ========================
+};// ======================== DELETE USER ========================
 const deleteUser = async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
@@ -172,11 +236,30 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// ======================== PROFILE (Authenticated) ========================
+const profile = async (req, res) => {
+    try {
+        // NOTE: This assumes you have authentication middleware (like verifyToken)
+        // that adds the decoded user info to req.user
 
+        // If your middleware sets req.user.id or req.user._id:
+        const userId = req.user.id || req.user._id;
 
-const profile=async (req, res) => {
-    res.send("hello profile")
-}
+        const user = await User.findById(userId).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User profile not found" });
+        }
+
+        res.json({
+            message: "User Profile Fetched",
+            user
+        });
+    } catch (error) {
+        console.error("Profile Error:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+};
 
 // ======================== EXPORT ALL ========================
 module.exports = {
@@ -188,6 +271,3 @@ module.exports = {
     deleteUser,
     profile,
 };
-
-
-
