@@ -6,10 +6,11 @@ const {
     getUserById,
     deleteUser,
     updateUser,
-    profile // <--- 1. Import this new controller function
+    profile
 } = require("../controller/userController");
 
 const { authMiddleware, adminOnly } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware'); // Import Multer
 
 const router = express.Router();
 
@@ -17,16 +18,20 @@ const router = express.Router();
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 
-// --- Protected Routes (Token Required) ---
-
-// 2. Add the profile route (Get current logged-in user)
+// --- Protected Routes ---
 router.get('/profile', authMiddleware, profile);
 
-router.put('/updateUser/:id', authMiddleware, updateUser);
+// --- Public/Shared Routes ---
+// Allow logged-in users to view other profiles (Removed adminOnly based on previous steps)
+router.get('/getUser/:id', authMiddleware, getUserById);
+
+// --- Update User (WITH IMAGE UPLOAD) ---
+// This is the ONLY update route you need.
+// It handles both text-only updates AND image uploads.
+router.put('/updateUser/:id', authMiddleware, upload.single('profilePicture'), updateUser);
 
 // --- Admin Only Routes ---
-router.get('/getUsers', authMiddleware, adminOnly, getAllUsers);
-router.get('/getUser/:id', authMiddleware, adminOnly, getUserById);
+router.get('/getUsers', authMiddleware, adminOnly, getAllUsers); // Recommended: Keep list restricted
 router.delete('/deleteUser/:id', authMiddleware, adminOnly, deleteUser);
 
 module.exports = router;

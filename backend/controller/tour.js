@@ -1,5 +1,7 @@
-const { Tour, validateTour } = require('../../models/tour/tour');
-const { Review,validateReview } = require('../../models/reviews/reviews');
+
+
+
+const { Tour, validateTour } = require('../model/tour');
 // --------------------- 1. Create Tour ---------------------
 const createTour = async (req, res) => {
     try {

@@ -151,43 +151,79 @@ const getUserById = async (req, res) => {
 // ======================== UPDATE USER ========================
 const updateUser = async (req, res) => {
     try {
-        // Expanded to include new profile fields
-        const {
+        // 1. Check if req.body exists
+        // (Note: With FormData, if no text fields are sent, req.body might be empty object, which is fine)
+        if (!req.body && !req.file) {
+            return res.status(400).json({ message: "No data provided" });
+        }
+
+        // 2. Destructure fields
+        let {
             name,
             email,
             number,
             country,
             city,
             description,
-            profilePictureUrl,
             socialLinks
         } = req.body;
 
+        // 3. Parse 'socialLinks' if it comes as a string (from FormData)
+        if (typeof socialLinks === 'string') {
+            try {
+                socialLinks = JSON.parse(socialLinks);
+            } catch (e) {
+                console.error("Error parsing socialLinks:", e);
+                // Keep it undefined or set to empty object if parsing fails
+                socialLinks = undefined;
+            }
+        }
+
+        // 4. Construct the Update Object safely
+        // We only add fields if they are NOT undefined.
+        // This prevents overwriting existing data with empty values if the frontend didn't send them.
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (country) updateData.country = country;
+        if (city) updateData.city = city;
+        if (description) updateData.description = description;
+        if (socialLinks) updateData.socialLinks = socialLinks;
+
+        // --- PHONE NUMBER SYNC FIX ---
+        // Your schema has both 'number' (legacy) and 'phoneNumber' (new).
+        // Best practice: Update BOTH to keep them in sync.
+        if (number) {
+            updateData.number = number;      // Legacy field
+            updateData.phoneNumber = number; // New field
+        }
+
+        // 5. Handle Image File
+        if (req.file) {
+            // Construct the full URL for the uploaded image
+            // NOTE: In production, avoid hardcoding 'localhost'. Use process.env.BASE_URL
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            updateData.profilePictureUrl = `${baseUrl}/uploads/${req.file.filename}`;
+        }
+
+        // 6. Update Database
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
-            {
-                name,
-                email,
-                number,
-                country,
-                city,
-                description,
-                profilePictureUrl,
-                socialLinks
-            },
-            { new: true, runValidators: true } // runValidators ensures country enum is checked
+            updateData,
+            { new: true, runValidators: true }
         ).select("-password");
 
-        if (!updatedUser) return res.status(404).json({ message: "User not found" });
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
 
         res.json({ message: "User updated successfully", updatedUser });
+
     } catch (error) {
         console.error("Update User Error:", error);
         res.status(500).json({ message: "Server error", error: error.message });
     }
-};
-
-// ======================== DELETE USER ========================
+};// ======================== DELETE USER ========================
 const deleteUser = async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
