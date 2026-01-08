@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
+import { baseApi } from "../utils/baseApi.js";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "/api"
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api"
 
 export default function EmergencyHub() {
   const [query, setQuery] = useState({ country: "BD", city: "Dhaka" })
@@ -118,6 +119,10 @@ export default function EmergencyHub() {
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
+<<<<<<< HEAD
+=======
+      <Nav />
+>>>>>>> 022282792e3f631cf79362c01178259b086946ae
       <div className="relative max-w-6xl mx-auto p-4">
         <h1 className="text-2xl font-semibold text-white">Safety & Emergency Hub</h1>
         <p className="text-white/90 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>

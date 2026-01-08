@@ -1,25 +1,40 @@
-const express = require('express');
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+require("dotenv").config();
+
 const app = express();
-const db = require("../backend/db/db");
+
+const db = require("./db/db");
 const userRouter = require("./route/userRouters");
-const blogRouter = require("./route/blogRoutes");  
+const blogRouter = require("./route/blogRoutes");
+const uploadRouter = require("./route/uploadRoutes");
 const tourRouter = require("./route/tourRouters");
 const packageRouter = require("./route/packageRoutes");
 const spotRouter = require("./route/spotRoutes");
 const documentRouter = require("./route/documentRoutes");
 const visaRouter = require("./route/visaRoutes");
 const chatRouter = require("./route/chatRoutes");
-const cors = require('cors');
-require('dotenv').config();
+const emergencyRouter = require("./route/emergencyRoutes");
+const safetyRouter = require("./route/safetyRoutes");
 const { ensureSeeded } = require('./controller/blogController');
 const { ensureSeededEmergency } = require('./controller/emergencyController');
 
 // -------------------------------
 // CORS setup
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 // Parse JSON body
 app.use(express.json());
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Connect to DB
 db();
@@ -39,6 +54,9 @@ app.use('/api/documents', documentRouter);
 app.use('/api/visa', visaRouter);
 app.use('/api/chat', chatRouter);
 
+app.use("/api/emergency-contacts", emergencyRouter);
+app.use("/api", safetyRouter);
+
 // -------------------------------
 const port = Number(process.env.PORT) || 8080;
 
@@ -47,12 +65,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Listening on port ${port}!`);
+  console.log(`Listening on port ${port}!`);
 });
-
-
-// Safety & Emergency Hub routes
-const emergencyRouter = require("./route/emergencyRoutes");
-const safetyRouter = require("./route/safetyRoutes");
-app.use('/api/emergency-contacts', emergencyRouter);
-app.use('/api', safetyRouter);

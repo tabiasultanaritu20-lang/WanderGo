@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast"; // 💡 New Import
+import {baseApi} from "../utils/baseApi.js";
 import Input from "../components/Input.jsx";
 import quotes from "../utils/quotes";
 import { useNavigate, Link } from "react-router-dom";
@@ -7,9 +9,8 @@ const Login = ({
                    action = "/api/user/login",
                    onSuccess,
                }) => {
-    const [form, setForm] = useState({email: "", password: ""});
+    const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
-    const [serverError, setServerError] = useState("");
     const [quoteIndex, setQuoteIndex] = useState(0);
     const navigate = useNavigate();
 
@@ -27,14 +28,16 @@ const Login = ({
     }, [form.email, form.password.length]);
 
     const onChange = (e) => {
-        const {name, value} = e.target;
-        setForm((f) => ({...f, [name]: value}));
+        const { name, value } = e.target;
+        setForm((f) => ({ ...f, [name]: value }));
     };
 
     const onSubmit = async (e) => {
         e.preventDefault();
-        setServerError("");
-        if (!canSubmit) return;
+        if (!canSubmit) {
+            toast.error("Please ensure email is valid and password is at least 6 characters.");
+            return;
+        }
 
         try {
             setLoading(true);
@@ -53,9 +56,22 @@ const Login = ({
             localStorage.setItem("token", data.token);
             onSuccess?.();
             setForm({ email: "", password: "" });
-            navigate("/create-tour");
+
+            toast.success("Login successful! Redirecting...");
+
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 500);
+
         } catch (err) {
-            setServerError(err.message);
+            // 🔴 Show Error Toast
+            const errorMessage =
+                err.response?.data?.message ||
+                err.message ||
+                "Login failed. Please check your credentials.";
+
+            toast.error(errorMessage);
+
         } finally {
             setLoading(false);
         }
@@ -63,9 +79,9 @@ const Login = ({
 
     return (
         <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50">
-            {/* Left panel with image and fade overlay */}
+            <Toaster position="top-center" reverseOrder={false} />
+
             <div className="relative hidden md:flex flex-col justify-between p-8 text-white overflow-hidden">
-                {/* Background image */}
                 <div
                     className="absolute inset-0 bg-cover bg-center"
                     style={{
@@ -74,10 +90,8 @@ const Login = ({
                     }}
                 ></div>
 
-                {/* Black fade overlay */}
                 <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/80"></div>
 
-                {/* Content */}
                 <div className="relative z-10 flex flex-col justify-between h-full">
                     <button
                         onClick={() =>
@@ -118,9 +132,8 @@ const Login = ({
                 </div>
             </div>
 
-            {/* Right panel (form area) */}
+
             <div className="flex items-center justify-center p-6 md:p-10 relative">
-                {/* Top-right Sign Up button for desktop */}
                 <div className="hidden md:block absolute right-6 top-6 z-10">
                     <Link
                         to="/signup"
@@ -142,7 +155,6 @@ const Login = ({
 
                 <div
                     className="w-full max-w-sm sm:max-w-md bg-white/90 backdrop-blur-md border border-slate-200 shadow-sm rounded-2xl p-6 sm:p-8">
-                    {/* Mobile Sign Up link */}
                     <div className="block md:hidden text-right mb-2">
                         <Link
                             to="/signup"
@@ -231,11 +243,12 @@ const Login = ({
                                 "Sign in"
                             )}
                         </button>
-
-                        {serverError && (
-                            <p className="text-xs text-rose-600 text-center">{serverError}</p>
-                        )}
                     </form>
+
+                    {/* The original serverError display is removed, replaced by the Toaster */}
+                    {/* {serverError && (
+                        <p className="text-xs text-rose-600 text-center">{serverError}</p>
+                    )} */}
 
                     {/* Mobile welcome + quotes */}
                     <div className="mt-8 md:hidden text-center">
@@ -247,7 +260,6 @@ const Login = ({
                 </div>
             </div>
 
-            {/* tiny fade animation */}
             <style>{`
         .animate-fade { animation: fade 0.4s ease-in; }
         @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

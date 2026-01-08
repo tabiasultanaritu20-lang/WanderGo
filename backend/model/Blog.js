@@ -1,53 +1,36 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const blogSchema = new mongoose.Schema(
   {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    content: {
-      type: String,
-      required: true,
-    },
-    authorName: {
-      type: String,
-      required: true,
-      default: 'Anonymous Traveler',
-    },
-    location: {
-      type: String,
-      default: 'Unknown',
-    },
-    categories: {
-      type: [String],
-      default: [],
-    },
-    coverImageUrl: {
-      type: String,
-      default:
-        'https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg',
-    },
-    // For future features
-    likes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
+    title: { type: String, required: true, trim: true },
+    content: { type: String, required: true },
+
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    authorName: { type: String, default: "Anonymous Traveler" },
+
+    location: { type: String, default: "Unknown" },
+    categories: { type: [String], default: [] },
+
+    // The main image for the card
+    coverImageUrl: { type: String, default: "" },
+    
+    // The gallery images (includes cover + others)
+    images: { type: [String], default: [] },
+
+    likes: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    
     comments: [
       {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         name: String,
         text: String,
         createdAt: { type: Date, default: Date.now },
       },
     ],
+
+    shares: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   },
   { timestamps: true }
 );
 
-const Blog = mongoose.model('Blog', blogSchema);
-
-module.exports = Blog;
+module.exports = mongoose.model("Blog", blogSchema);

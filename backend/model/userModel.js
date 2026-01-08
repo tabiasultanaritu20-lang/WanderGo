@@ -34,7 +34,6 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-
     email: {
         type: String,
         required: true,
@@ -42,7 +41,6 @@ const userSchema = new mongoose.Schema({
         lowercase: true,
         trim: true
     },
-
     password: {
         type: String,
         required: true,
@@ -53,19 +51,16 @@ const userSchema = new mongoose.Schema({
         enum: ["user", "admin", "agency"],
         default: "user"
     },
-
     number: {
         type: String,
         required: true,
         trim: true
     },
-
     country: {
         type: String,
-        enum: countries,  // only accepts from this list
+        enum: countries,
         required: true
     },
-
     cart: [
         {
             productId: {
@@ -77,9 +72,15 @@ const userSchema = new mongoose.Schema({
                 default: 1
             }
         }
+    ],
+    // FEATURE: Saved Blogs Array
+    savedBlogs: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Blog"
+        }
     ]
 }, { timestamps: true });
 
 const User = mongoose.model("User", userSchema);
-
 module.exports = User;

@@ -1,5 +1,5 @@
-import React from "react"
-import { Link, useLocation } from "react-router-dom"
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const items = [
   { key: "home", label: "Home", to: "/home" },
@@ -14,7 +14,8 @@ const items = [
 ]
 
 export default function NavTabs() {
-  const { pathname } = useLocation()
+  const { pathname } = useLocation();
+
   return (
     <nav className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
