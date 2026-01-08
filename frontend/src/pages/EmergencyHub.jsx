@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import NavTabs from "../components/NavTabs"
-import {baseApi} from "../utils/baseApi.js";
-import Nav from "../components/Nav.jsx";
+import { baseApi } from "../utils/baseApi.js";
 
-const API = baseApi
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8080/api"
 
 export default function EmergencyHub() {
   const [query, setQuery] = useState({ country: "BD", city: "Dhaka" })
@@ -43,7 +41,7 @@ export default function EmergencyHub() {
               <div className="flex items-center gap-2">
                 <a href={`tel:${c.phone}`} className="text-sm font-medium text-slate-900">{c.phone}</a>
                 <button
-                  onClick={async()=>{try{const r=await fetch(API+"/api/emergency-contacts/"+c.id,{method:"DELETE"});if(r.ok){await load()}}catch{ void 0 }}}
+                  onClick={async()=>{try{const r=await fetch(`${API_BASE}/emergency-contacts/${c.id}`,{method:"DELETE"});if(r.ok){await load()}}catch{ void 0 }}}
                   className="text-xs px-2 py-1 rounded border border-rose-300 text-rose-700 hover:bg-rose-50"
                 >
                   Delete
@@ -61,30 +59,30 @@ export default function EmergencyHub() {
     setLoading(true)
     setError("")
     try {
-      const u = new URL(API + "/api/emergency-contacts")
-      u.searchParams.set("country", query.country)
-      if (query.city) u.searchParams.set("city", query.city)
-      const r = await fetch(u.toString())
+      const p = new URLSearchParams()
+      p.set("country", query.country)
+      if (query.city) p.set("city", query.city)
+      const r = await fetch(`${API_BASE}/emergency-contacts?${p.toString()}`)
       const j = await r.json()
       setContacts(Array.isArray(j.contacts) ? j.contacts : [])
     } catch {
       setError("Failed to load contacts")
     }
     try {
-      const u2 = new URL(API + "/api/safety-rating")
-      u2.searchParams.set("country", query.country)
-      if (query.city) u2.searchParams.set("city", query.city)
-      const r2 = await fetch(u2.toString())
+      const p2 = new URLSearchParams()
+      p2.set("country", query.country)
+      if (query.city) p2.set("city", query.city)
+      const r2 = await fetch(`${API_BASE}/safety-rating?${p2.toString()}`)
       const j2 = await r2.json()
       setRating(j2)
     } catch {
       setRating(null)
     }
     try {
-      const u3 = new URL(API + "/api/travel-advice")
-      u3.searchParams.set("country", query.country)
-      if (query.city) u3.searchParams.set("city", query.city)
-      const r3 = await fetch(u3.toString())
+      const p3 = new URLSearchParams()
+      p3.set("country", query.country)
+      if (query.city) p3.set("city", query.city)
+      const r3 = await fetch(`${API_BASE}/travel-advice?${p3.toString()}`)
       const j3 = await r3.json()
       setAdvice(j3)
     } catch {
@@ -95,10 +93,10 @@ export default function EmergencyHub() {
 
   const loadAlerts = useCallback(async () => {
     try {
-      const u = new URL(API + "/api/alerts")
-      u.searchParams.set("country", query.country)
-      if (query.city) u.searchParams.set("city", query.city)
-      const r = await fetch(u.toString())
+      const p = new URLSearchParams()
+      p.set("country", query.country)
+      if (query.city) p.set("city", query.city)
+      const r = await fetch(`${API_BASE}/alerts?${p.toString()}`)
       const j = await r.json()
       setAlerts(Array.isArray(j.alerts) ? j.alerts : [])
     } catch { void 0 }
@@ -121,10 +119,9 @@ export default function EmergencyHub() {
         }}
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/25 to-black/40" />
-      <Nav />
       <div className="relative max-w-6xl mx-auto p-4">
-        <h1 className="text-2xl font-semibold">Safety & Emergency Hub</h1>
-        <p className="text-slate-600 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>
+        <h1 className="text-2xl font-semibold text-white">Safety & Emergency Hub</h1>
+        <p className="text-white/90 mt-1">Police, hospital, fire service and embassy contacts with safety indicators.</p>
         <div
           className="mt-6 w-full md:sticky md:top-24 md:z-30 rounded-2xl p-4 backdrop-blur-md bg-white/60 border border-slate-200/30 transition-shadow duration-300"
           style={{
@@ -193,7 +190,7 @@ export default function EmergencyHub() {
               onClick={async()=>{
                 try{
                   if(!query.country?.trim()) return;
-                  const r = await fetch(API + "/api/emergency-contacts", {
+                  const r = await fetch(`${API_BASE}/emergency-contacts`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ ...newContact, country: query.country, city: query.city })
@@ -261,7 +258,7 @@ export default function EmergencyHub() {
                 {[1,2,3,4,5].map((n) => (
                   <button key={n} onClick={() => setUserRate(n)} className={`h-8 w-8 rounded-full ${userRate===n?"bg-yellow-400":"bg-slate-200"}`}>★</button>
                 ))}
-                <button onClick={async()=>{try{const r=await fetch(API+"/api/safety-rating/rate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:query.country,city:query.city,rating:userRate})});if(r.ok){await load()}}catch{ void 0 }}} className="ml-2 px-3 py-2 rounded-md bg-slate-900 text-white">Submit</button>
+                <button onClick={async()=>{try{const r=await fetch(`${API_BASE}/safety-rating/rate`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:query.country,city:query.city,rating:userRate})});if(r.ok){await load()}}catch{ void 0 }}} className="ml-2 px-3 py-2 rounded-md bg-slate-900 text-white">Submit</button>
               </div>
             </div>
             <div className="mt-4">
@@ -273,7 +270,7 @@ export default function EmergencyHub() {
                     <button key={n} onClick={() => setAdminRate(n)} className={`h-8 w-8 rounded-full ${adminRate===n?"bg-yellow-400":"bg-slate-200"}`}>★</button>
                   ))}
                 </div>
-                <button onClick={async()=>{try{const r=await fetch(API+"/api/safety-rating/admin",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:query.country,city:query.city,rating:adminRate,adminKey})});if(r.ok){await load()}}catch{ void 0 }}} className="px-3 py-2 rounded-md bg-slate-900 text-white">Set</button>
+                <button onClick={async()=>{try{const r=await fetch(`${API_BASE}/safety-rating/admin`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({country:query.country,city:query.city,rating:adminRate,adminKey})});if(r.ok){await load()}}catch{ void 0 }}} className="px-3 py-2 rounded-md bg-slate-900 text-white">Set</button>
               </div>
             </div>
           </section>
@@ -304,7 +301,7 @@ export default function EmergencyHub() {
                 <input className="px-3 py-2 rounded-md border border-slate-300 bg-white" placeholder="Start date" value={newAlert.start_date} onChange={(e)=>setNewAlert({ ...newAlert, start_date: e.target.value })} />
                 <input className="px-3 py-2 rounded-md border border-slate-300 bg-white" placeholder="End date" value={newAlert.end_date} onChange={(e)=>setNewAlert({ ...newAlert, end_date: e.target.value })} />
                 <input className="px-3 py-2 rounded-md border border-slate-300 bg-white" placeholder="Description" value={newAlert.description} onChange={(e)=>setNewAlert({ ...newAlert, description: e.target.value })} />
-                <button onClick={async()=>{try{const r=await fetch(API+"/api/alerts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ ...newAlert, country: query.country, city: query.city })});if(r.ok){setNewAlert({ severity: newAlert.severity, description:"", start_date:"", end_date:""});await loadAlerts()}}catch{ void 0 }}} className="px-3 py-2 rounded-md bg-slate-900 text-white">Add</button>
+                <button onClick={async()=>{try{const r=await fetch(`${API_BASE}/alerts`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ ...newAlert, country: query.country, city: query.city })});if(r.ok){setNewAlert({ severity: newAlert.severity, description:"", start_date:"", end_date:""});await loadAlerts()}}catch{ void 0 }}} className="px-3 py-2 rounded-md bg-slate-900 text-white">Add</button>
               </div>
               <div className="mt-3 space-y-2 text-sm">
                 {alerts.map((al)=> (

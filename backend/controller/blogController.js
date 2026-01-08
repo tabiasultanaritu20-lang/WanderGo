@@ -64,7 +64,15 @@ exports.createBlog = async (req, res) => {
     const { id: userId, name, email } = getUserFromReq(req);
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    const { title, content, authorName, location, categories } = req.body;
+    // Extract fields from body
+    // IMPORTANT: We prefer the 'authorName' sent from the frontend form.
+    // If it's empty, we fallback to the user's profile name.
+    const { title, content, location, categories, authorName } = req.body;
+    
+    const finalAuthorName = (authorName && authorName.trim()) 
+        ? authorName 
+        : (name || email || "Anonymous Traveler");
+
     const categoriesArr = categories ? categories.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
     // Handle Images
@@ -78,11 +86,11 @@ exports.createBlog = async (req, res) => {
       title,
       content,
       author: userId,
-      authorName: (authorName && authorName.trim()) || name || email || "Anonymous Traveler",
+      authorName: finalAuthorName, // Use the determined name
       location,
       categories: categoriesArr,
       coverImageUrl,
-      images: imageUrls, // Store all images in the gallery array
+      images: imageUrls, 
     });
 
     res.status(201).json({ message: "Blog created", data: blog });

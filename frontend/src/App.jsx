@@ -23,24 +23,35 @@ import Booking from "./pages/Booking.jsx";
 import CheckoutSuccess from "./pages/CheckoutSuccess.jsx"; // Import the new component
 
 function App() {
+    // Check if user is logged in
+    const isAuthenticated = !!localStorage.getItem("token");
+
     return (
         <BrowserRouter>
             <Routes>
-                {/* --- Public Routes (Accessible by anyone) --- */}
+                {/* --- Public Routes --- */}
+
+                {/* FIX: Smart Home Route.
+                    If logged in -> Go to Dashboard.
+                    If not -> Go to Login.
+                    This stops the "Wheel redirect loop".
+                */}
+
+
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
-                <Route path="/" element={<Navigate to="/login" replace />} />
-
-                {/* Optional: Leave Wheel public, or move to protected if needed */}
                 <Route path="/wheel" element={<DestinationWheel />} />
 
                 {/* --- Protected Routes (Login required) --- */}
+                {/* This uses the Updated ProtectedRoute with <Outlet /> */}
                 <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<MainDash />} />
                     <Route path="/EmergencyHub" element={<EmergencyHub />} />
+
+                    {/* User Dashboard & Profile */}
                     <Route path="/user-dashboard" element={<UserDashboard />} />
+                    <Route path="/userPanel" element={<UserDashboard />} /> {/* Duplicate handled */}
                     <Route path="/profile" element={<Profile />} />
-                    <Route path="/userPanel" element={<UserPanel />} />
 
                     {/* Blog Routes */}
                     <Route path="/blog" element={<TravelBlogFeed />} />
@@ -65,7 +76,7 @@ function App() {
                 </Route>
 
                 {/* 404 Fallback */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     )
