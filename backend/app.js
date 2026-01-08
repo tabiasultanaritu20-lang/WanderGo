@@ -15,6 +15,7 @@ const spotRouter = require("./route/spotRoutes");
 const documentRouter = require("./route/documentRoutes");
 const visaRouter = require("./route/visaRoutes");
 const chatRouter = require("./route/chatRoutes");
+const reviewRouter = require("./route/reviews");
 const emergencyRouter = require("./route/emergencyRoutes");
 const safetyRouter = require("./route/safetyRoutes");
 const { ensureSeededEmergency } = require('./controller/emergencyController');
@@ -22,17 +23,21 @@ const { ensureSeededEmergency } = require('./controller/emergencyController');
 // -------------------------------
 // CORS setup
 app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-  })
+    cors({
+        // FIX: specific origins are required when credentials are true
+        origin: ["http://localhost:5173", "http://localhost:5174"],
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        credentials: true,
+    })
 );
 
 // Parse JSON body
 app.use(express.json());
+// Recommended: Handle standard form submissions
+app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files
+// Ensure a folder named 'uploads' exists in your project root
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Connect to DB
@@ -52,6 +57,7 @@ app.use('/api/documents', documentRouter);
 app.use('/api/visa', visaRouter);
 app.use('/api/chat', chatRouter);
 
+app.use("/api/reviews", reviewRouter);
 app.use("/api/emergency-contacts", emergencyRouter);
 app.use("/api", safetyRouter);
 

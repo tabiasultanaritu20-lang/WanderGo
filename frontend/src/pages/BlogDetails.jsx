@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
+import {useParams, useNavigate, Outlet} from "react-router-dom";
 import "./TravelBlogFeed.css";
 
 const API_URL = "http://localhost:8080/api/blogs";
@@ -159,6 +159,8 @@ const BlogDetails = () => {
       </div>
     </div>
   );
+
+
 };
 
 export default BlogDetails;

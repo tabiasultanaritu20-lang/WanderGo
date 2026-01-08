@@ -1,4 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
+import toast, { Toaster } from "react-hot-toast"; // New Import
+import { baseApi } from "../utils/baseApi.js"; // Use baseApi like Login
 import Input from "../components/Input.jsx";
 import countries from "../utils/country";
 import quotes from "../utils/quotes";
@@ -13,11 +15,12 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
         password: "",
         number: "",
         country: "Bangladesh",
+        city: "", // Added City
         role: "user",
         
     });
+
     const [loading, setLoading] = useState(false);
-    const [serverError, setServerError] = useState("");
     const [quoteIndex, setQuoteIndex] = useState(0);
     const navigate = useNavigate();
 
@@ -42,8 +45,11 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
 
     const onSubmit = async (e) => {
         e.preventDefault();
-        setServerError("");
-        if (!canSubmit) return;
+
+        if (!canSubmit) {
+            toast.error("Please fill in all fields correctly.");
+            return;
+        }
 
         try {
             setLoading(true);
@@ -72,18 +78,28 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
             }
             
             onSuccess?.();
+
+            // Clear form
             setForm({
                 name: "",
                 email: "",
                 password: "",
                 number: "",
                 country: "Bangladesh",
+                city: "",
                 role: "user",
                 adminKey: "",
             });
-            navigate("/dashboard");
+
+            // Redirect to dashboard
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 1000);
+
         } catch (err) {
-            setServerError(err.message);
+            // Handle Axios Error
+            const errorMessage = err.response?.data?.message || err.message || "Signup failed.";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -91,6 +107,8 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
 
     return (
         <div className="relative min-h-screen grid grid-cols-1 md:grid-cols-2 bg-slate-50">
+            <Toaster position="top-center" reverseOrder={false} />
+
             {/* Black overlay for mobile */}
             <div className="absolute inset-0 bg-black/70 md:hidden"></div>
 
@@ -107,7 +125,7 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
                 </Link>
             </div>
 
-            {/* Left panel (image background with black overlay) */}
+            {/* Left panel (image background) */}
             <div className="relative hidden md:flex flex-col justify-between p-8 text-white overflow-hidden">
                 <div
                     className="absolute inset-0 bg-cover bg-center"
@@ -187,25 +205,42 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
                             required
                         />
 
-                        {/* Country */}
-                        <div>
-                            <label htmlFor="country" className="block text-sm font-medium text-slate-700 mb-1">
-                                Country
-                            </label>
-                            <select
-                                id="country"
-                                name="country"
-                                value={form.country}
-                                onChange={onChange}
-                                required
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
-                            >
-                                {countries.map((c) => (
-                                    <option key={c} value={c}>
-                                        {c}
-                                    </option>
-                                ))}
-                            </select>
+                        {/* Country & City Group */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label htmlFor="country" className="block text-sm font-medium text-slate-700 mb-1">
+                                    Country
+                                </label>
+                                <select
+                                    id="country"
+                                    name="country"
+                                    value={form.country}
+                                    onChange={onChange}
+                                    required
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10"
+                                >
+                                    {countries.map((c) => (
+                                        <option key={c} value={c}>
+                                            {c}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label htmlFor="city" className="block text-sm font-medium text-slate-700 mb-1">
+                                    City
+                                </label>
+                                <input
+                                    id="city"
+                                    name="city"
+                                    value={form.city}
+                                    onChange={onChange}
+                                    placeholder="e.g. Dhaka"
+                                    required
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-slate-900/10 placeholder:text-slate-400"
+                                />
+                            </div>
                         </div>
 
                         {/* Role */}
@@ -248,18 +283,16 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
                         >
                             {loading ? (
                                 <span className="inline-flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                  </svg>
-                  Creating account…
-                </span>
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                                    </svg>
+                                    Creating account…
+                                </span>
                             ) : (
                                 "Create account"
                             )}
                         </button>
-
-                        {serverError && <p className="text-xs text-rose-600 text-center">{serverError}</p>}
                     </form>
 
                     {/* Mobile welcome */}
@@ -270,11 +303,10 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
                 </div>
             </div>
 
-            {/* tiny fade animation */}
             <style>{`
-        .animate-fade { animation: fade 0.4s ease-in; }
-        @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
+                .animate-fade { animation: fade 0.4s ease-in; }
+                @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+            `}</style>
         </div>
     );
 };
