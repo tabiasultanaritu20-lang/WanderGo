@@ -6,7 +6,7 @@ const bookingApi = {
 
     // 2. Stripe: Create Checkout Session
     // Sends the bookingId to backend to generate a Stripe payment URL
-    createCheckoutSession: (bookingId) => api.post("/bookings/create-checkout-session", { bookingId }),
+    createCheckoutSession: (bookingId) => api.post("/bookings/checkout-session", { bookingId }),
 
     // 3. Stripe: Verify Payment (Sandbox/Localhost flow)
     // Sends the session_id from URL to backend to confirm payment

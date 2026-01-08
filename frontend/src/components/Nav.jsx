@@ -55,7 +55,7 @@ function Nav({ cartCount }) {
                     to="/create-tour"
                     className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
                 >
-                  Agency
+                  Creat Tour
                 </Link>
             )}
 

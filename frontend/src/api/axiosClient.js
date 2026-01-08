@@ -1,9 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-    baseURL: "http://localhost:8080/api", // Make sure this matches your backend
-    // REMOVED: headers: { "Content-Type": "application/json" }
-    // ^ Do not set a global default here, let Axios handle it dynamically
+    baseURL: "http://localhost:8080/api",
 });
 
 // Request Interceptor
@@ -14,9 +12,7 @@ api.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        // --- THE CRITICAL FIX ---
-        // If sending FormData (Image Upload), delete the Content-Type header
-        // This lets the browser set it to "multipart/form-data; boundary=..." automatically
+
         if (config.data instanceof FormData) {
             delete config.headers["Content-Type"];
         } else {
