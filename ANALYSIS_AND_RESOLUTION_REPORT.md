@@ -347,7 +347,7 @@ frontend/src/
 - ✅ Routes (11 total)
 - ✅ Frontend pages (12 total)
 - ✅ Frontend components (6+ components)
-- ✅ Middleware (authMiddleware.js, upload.js)
+- ✅ Middleware (authMiddleware.js, imageUpload.js)
 
 ---
 
