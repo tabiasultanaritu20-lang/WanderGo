@@ -58,7 +58,7 @@ function Nav({ cartCount }) {
 
             {/* --- USER ROLE SPECIFIC --- */}
             {userRole === 'user' && (
-                <Link to="/my-bookings" className={linkStyle('/my-bookings')}>
+                <Link to="/mybooked" className={linkStyle('/my-bookings')}>
                   <Ticket className="w-4 h-4" />
                   Booked Tours
                 </Link>

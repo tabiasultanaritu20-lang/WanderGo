@@ -21,7 +21,8 @@ import UserPanel from "./pages/userDashboard/UserDashboard.jsx";
 import TourDetail from "./pages/TourDetail.jsx";
 import Booking from "./pages/Booking.jsx";
 import CheckoutSuccess from "./pages/CheckoutSuccess.jsx";
-import AgencyTours from "./pages/MyTour.jsx"; // Import the new component
+import AgencyTours from "./pages/MyTour.jsx";
+import MyBookings from "./pages/MyBookedTour.jsx"; // Import the new component
 
 function App() {
     // Check if user is logged in
@@ -67,6 +68,7 @@ function App() {
                     <Route path="/agency/my-tours" element={<AgencyTours />} />
                     <Route path="/tours/:id/book" element={<Booking />} />
                     <Route path="/checkout-success" element={<CheckoutSuccess />} />
+                    <Route path="/mybooked" element={<MyBookings />} />
 
                     {/* Tour Creation */}
                     <Route
