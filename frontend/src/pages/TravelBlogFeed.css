@@ -1,0 +1,342 @@
+/* Page background + base layout */
+.travel-blog-feed {
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 24px 16px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Inner container so content is centered and not full-width */
+.travel-blog-feed > * {
+  width: 100%;
+  max-width: 900px;
+}
+
+/* HEADER */
+.travel-blog-feed__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.travel-blog-feed__header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0;
+  color: #111827;
+}
+
+.travel-blog-feed__header p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.travel-blog-feed__header button {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 18px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.travel-blog-feed__header button:hover {
+  background: #4338ca;
+  transform: translateY(-1px);
+}
+
+/* FILTER BAR */
+.travel-blog-feed__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: #ffffff;
+  padding: 12px 14px;
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.travel-blog-feed__filters input {
+  flex: 1;
+  min-width: 140px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+.travel-blog-feed__filters input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+.travel-blog-feed__filters button {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.travel-blog-feed__filters button[type="submit"] {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.travel-blog-feed__filters button[type="button"] {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+/* STATES */
+.travel-blog-feed__loading,
+.travel-blog-feed__empty,
+.travel-blog-feed__error {
+  margin-top: 24px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.travel-blog-feed__error {
+  color: #b91c1c;
+}
+
+/* FEED LIST */
+.travel-blog-feed__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* BLOG CARD */
+.travel-blog-feed__card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.09);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Header row in card */
+.travel-blog-feed__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.travel-blog-feed__card-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.travel-blog-feed__author {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Meta line (location + time) */
+.travel-blog-feed__meta {
+  display: flex;
+  gap: 10px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* Image */
+.travel-blog-feed__image-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.travel-blog-feed__image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+/* Content preview */
+.travel-blog-feed__content-preview {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #374151;
+}
+
+/* TAGS */
+.travel-blog-feed__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.travel-blog-feed__tag {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* ACTION BUTTONS */
+.travel-blog-feed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.travel-blog-feed__actions button {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.travel-blog-feed__actions button:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+  transform: translateY(-1px);
+}
+
+/* BLOG DETAILS + COMMENTS (used in BlogDetails.jsx) */
+.travel-blog-feed__content-full {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #374151;
+}
+
+.travel-blog-feed__comment-card {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.travel-blog-feed__comment-card strong {
+  font-size: 13px;
+  color: #111827;
+}
+
+.travel-blog-feed__comment-card p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.travel-blog-feed__comment-form input {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  font-size: 13px;
+  outline: none;
+}
+
+.travel-blog-feed__comment-form input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+.travel-blog-feed__comment-form button {
+  margin-top: 6px;
+  border-radius: 999px;
+  border: none;
+  padding: 7px 16px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .travel-blog-feed__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .travel-blog-feed__filters {
+    border-radius: 16px;
+  }
+}
+.blog-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.blog-form__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.blog-form__field {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.blog-form__field label {
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+}
+
+.blog-form__field input,
+.blog-form__field textarea {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+}
+
+.blog-form__field input:focus,
+.blog-form__field textarea:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.2);
+}
+
+.blog-form button[type="submit"] {
+  align-self: flex-start;
+  border-radius: 999px;
+  border: none;
+  padding: 8px 18px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 4px;
+}
