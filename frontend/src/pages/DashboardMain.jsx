@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import Nav from '../components/Nav.jsx';         // Assuming Nav.jsx is defined elsewhere
 import Dashboard from '../components/Dashboard.jsx'; // Assuming Dashboard.jsx is defined elsewhere
 
 // Demo tours data - kept in the root for central state management
@@ -92,7 +91,6 @@ const parseDuration = (durationStr) => {
 function MainDash() {
     // --- Global State ---
     const [tours] = useState(initialTours);
-    const [cartCount, setCartCount] = useState(0);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
     // --- Sorting State ---
@@ -105,9 +103,20 @@ function MainDash() {
     const [tourTypesFilter, setTourTypesFilter] = useState([]); // Default to empty array
 
     // --- Callbacks ---
-    const handleAddToCart = useCallback(() => {
-        setCartCount(prev => prev + 1);
-        console.log("Tour added to cart.");
+    const handleAddToCart = useCallback((item) => {
+        try {
+            const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
+            const idx = items.findIndex(i => i && i.kind === item.kind && String(i.id) === String(item.id));
+            if (idx >= 0) {
+                items[idx].quantity = Number(items[idx].quantity || 1) + 1;
+            } else {
+                items.push({ ...item, quantity: 1 });
+            }
+            localStorage.setItem('cartItems', JSON.stringify(items));
+            const total = items.reduce((sum, it) => sum + Number(it.quantity || 1), 0);
+            localStorage.setItem('cartCount', String(total));
+            window.dispatchEvent(new Event('cart:update'));
+        } catch (e) { void e }
     }, []);
 
     const handleSortOrderToggle = useCallback(() => {
@@ -120,6 +129,13 @@ function MainDash() {
 
     // --- Combined Filtering and Sorting Logic ---
     const filteredAndSortedTours = useMemo(() => {
+        // Get user preferences
+        let prefs = { interests: [], countries: [], cities: [] };
+        try {
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            if (user.preferences) prefs = user.preferences;
+        } catch (e) { console.error(e); }
+
         // 1. Filtering
         const filteredTours = tours.filter(tour => {
 
@@ -154,6 +170,22 @@ function MainDash() {
 
         // 2. Sorting
         return filteredTours.sort((a, b) => {
+            // Helper to check preference match
+            const isMatch = (item) => {
+                if (prefs.interests?.some(i => item.type?.includes(i))) return true;
+                if (prefs.countries?.some(c => item.location?.includes(c))) return true;
+                if (prefs.cities?.some(c => item.location?.includes(c))) return true;
+                return false;
+            };
+
+            const matchA = isMatch(a);
+            const matchB = isMatch(b);
+
+            // Prioritize matches at the top
+            if (matchA && !matchB) return -1;
+            if (!matchA && matchB) return 1;
+
+            // Standard Sorting
             let comparison = 0;
             if (sortBy === 'price') {
                 comparison = a.price - b.price;
@@ -168,7 +200,6 @@ function MainDash() {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
-            <Nav cartCount={cartCount} />
             <Dashboard
                 // Tour Data
                 sortedTours={filteredAndSortedTours}
@@ -190,6 +221,8 @@ function MainDash() {
 
                 // Action Handlers
                 handleAddToCart={handleAddToCart}
+                isMobileFilterOpen={isMobileFilterOpen}
+                handleMobileFilterToggle={handleMobileFilterToggle}
             />
         </div>
     );

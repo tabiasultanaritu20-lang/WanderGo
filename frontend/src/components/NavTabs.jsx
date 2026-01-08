@@ -2,15 +2,16 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 const items = [
-  { key: "home", label: "Home", to: "/home" },
+  { key: "home", label: "Home", to: "/dashboard" },
   { key: "packages", label: "Packages", to: "/packages" },
-  { key: "tours", label: "Tours", to: "/create-tour" },
-  { key: "bookings", label: "My Bookings", disabled: true },
-  { key: "profile", label: "Profile", disabled: true },
-  { key: "blogs", label: "Blog Feed", to: "/blogs" },
-  { key: "emergency", label: "Emergency Hub", to: "/emergency" },
+  { key: "wheel", label: "Destination Wheel", to: "/wheel" },
+  { key: "agency", label: "Agency", to: "/create-tour" },
+  { key: "emergency", label: "Emergency Hub", to: "/EmergencyHub" },
   { key: "spots", label: "Spot Directory", to: "/spots" },
-  { key: "visa", label: "Visa & Docs", to: "/visa-docs" }
+  { key: "visa", label: "Visa & Docs", to: "/visa-docs" },
+  { key: "blog", label: "Blog", to: "/blog" },
+  { key: "saved", label: "Saved Blogs", to: "/saved-blogs" },
+  { key: "profile", label: "Profile", to: "/profile" }
 ]
 
 export default function NavTabs() {

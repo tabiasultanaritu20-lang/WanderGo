@@ -13,7 +13,33 @@ const ProtectedRoute = () => {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // 4. If token exists, show the protected content
+    // 4. Check Personalization
+    try {
+        let user = {};
+        try {
+            const storedUser = localStorage.getItem('user');
+            user = storedUser ? JSON.parse(storedUser) : {};
+        } catch (parseError) {
+            console.error("Error parsing user from localStorage", parseError);
+            user = {};
+        }
+
+        // Normalize path to remove trailing slash for consistent comparison
+        // Exception: keep root "/" as "/"
+        const currentPath = location.pathname.length > 1 && location.pathname.endsWith('/') 
+            ? location.pathname.slice(0, -1) 
+            : location.pathname;
+
+        // If NOT personalized and NOT currently on the personalization page, redirect there.
+        // using !user.isPersonalized covers 'false' and 'undefined' (legacy localStorage data)
+        if (!user.isPersonalized && currentPath !== '/personalization') {
+            return <Navigate to="/personalization" replace />;
+        }
+    } catch (e) {
+        console.error("Error in ProtectedRoute logic", e);
+    }
+
+    // 5. If token exists, show the protected content
     return <Outlet />;
 };
 

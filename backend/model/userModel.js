@@ -88,6 +88,17 @@ const userSchema = new mongoose.Schema({
         trim: true
     },
 
+    // --- Personalization ---
+    isPersonalized: {
+        type: Boolean,
+        default: false
+    },
+    preferences: {
+        countries: [String],
+        cities: [String],
+        interests: [String]
+    },
+
     // --- Commerce (Legacy Support) ---
     cart: [
         {

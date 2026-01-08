@@ -143,7 +143,18 @@ function Dashboard({
                                         <p className="text-2xl font-extrabold text-indigo-600">${tour.price}</p>
                                     </div>
                                     <button
-                                        onClick={handleAddToCart}
+                                        onClick={() => {
+                                          const item = {
+                                            kind: 'tour',
+                                            id: tour.id,
+                                            title: tour.title,
+                                            price: tour.price,
+                                            imageUrl: tour.imageUrl,
+                                            city: tour.location.split(',')[0] || '',
+                                            country: (tour.location.split(',')[1] || '').trim(),
+                                          };
+                                          handleAddToCart(item);
+                                        }}
                                         className="px-6 py-3 bg-indigo-600 text-white text-base font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-300 transform hover:scale-105"
                                     >
                                         Book Now

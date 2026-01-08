@@ -5,7 +5,11 @@ const jwt = require("jsonwebtoken");
 // ======================== REGISTER USER ========================
 const registerUser = async (req, res) => {
     try {
-        let { name, email, password, number, country, role } = req.body;
+        let { name, email, password, number, country, role, city } = req.body;
+
+        if (!name || !email || !password || !number || !country) {
+            return res.status(400).json({ message: "Name, email, password, number, and country are required" });
+        }
 
         // 2. Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -106,7 +110,9 @@ const loginUser = async (req, res) => {
                 country: user.country,
                 city: user.city,
                 role: user.role,
-                profilePictureUrl: user.profilePictureUrl
+                profilePictureUrl: user.profilePictureUrl,
+                isPersonalized: user.isPersonalized,
+                preferences: user.preferences
             },
             token,
         });
@@ -252,6 +258,37 @@ const profile = async (req, res) => {
     }
 };
 
+// ======================== SAVE PREFERENCES ========================
+const savePreferences = async (req, res) => {
+    try {
+        const { preferences } = req.body;
+        // Check both id locations just in case
+        const userId = req.user?.id || req.user?._id;
+
+        if (!preferences) {
+            return res.status(400).json({ message: "Preferences are required" });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            userId,
+            { 
+                preferences, 
+                isPersonalized: true 
+            },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({ message: "Preferences saved", user });
+    } catch (error) {
+        console.error("Save Preferences Error:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
 // ======================== EXPORT ALL ========================
 module.exports = {
     registerUser,
@@ -261,4 +298,5 @@ module.exports = {
     updateUser,
     deleteUser,
     profile,
+    savePreferences
 };

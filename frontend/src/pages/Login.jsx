@@ -58,7 +58,11 @@ const Login = ({
 
             // 2. Redirect to the saved location (Blog) OR Dashboard
             setTimeout(() => {
-                navigate(from, { replace: true });
+                if (!user.isPersonalized) {
+                    navigate('/personalization', { replace: true });
+                } else {
+                    navigate(from, { replace: true });
+                }
             }, 500);
 
         } catch (err) {

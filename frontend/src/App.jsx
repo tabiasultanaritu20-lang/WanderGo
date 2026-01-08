@@ -3,20 +3,27 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 // --- Pages ---
 import DestinationWheel from "./pages/DestinationWheel";
-import SignUp from '../src/pages/SignUp.jsx'
-import Login from '../src/pages/Login.jsx'
+import SignUp from './pages/SignUp.jsx'
+import Login from './pages/Login.jsx'
 import MainDash from "./pages/DashboardMain.jsx";
 import EmergencyHub from "./pages/EmergencyHub.jsx";
 import TravelBlogFeed from "./pages/TravelBlogFeed.jsx";
 import BlogDetails from "./pages/BlogDetails.jsx";
 import BlogForm from "./pages/BlogForm.jsx";
 import SavedBlogs from "./pages/SavedBlogs.jsx";
-import CreateTourForm from "../src/pages/CreateTourForm.jsx";
+import CreateTourForm from "./pages/CreateTourForm.jsx";
+import SpotDirectory from "./pages/SpotDirectory.jsx";
+import VisaDocs from "./pages/VisaDocs.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
 import Profile from "./pages/Profile.jsx";
+import Cart from "./pages/Cart.jsx";
+import Personalization from "./pages/Personalization.jsx";
 
 // --- Components ---
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 import UserDashboard from "./pages/userDashboard/UserDashboard.jsx";
+import Nav from "./components/Nav.jsx";
+import Chatbot from "./components/Chatbot.jsx";
 
 function App() {
     // Check if user is logged in
@@ -34,7 +41,7 @@ function App() {
                 */}
                 <Route 
                     path="/" 
-                    element={isAuthenticated ? <MainDash /> : <Login />} 
+                    element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />} 
                 />
 
                 <Route path="/login" element={<Login />} />
@@ -44,28 +51,33 @@ function App() {
                 {/* --- Protected Routes (Login required) --- */}
                 {/* This uses the Updated ProtectedRoute with <Outlet /> */}
                 <Route element={<ProtectedRoute />}>
-                    <Route path="/dashboard" element={<MainDash />} />
-                    <Route path="/EmergencyHub" element={<EmergencyHub />} />
+                    <Route path="/dashboard" element={<><Nav /><Chatbot /><MainDash /></>} />
+                    <Route path="/EmergencyHub" element={<><Nav /><Chatbot /><EmergencyHub /></>} />
+                    <Route path="/packages" element={<><Nav /><Chatbot /><Dashboard /></>} />
+                    <Route path="/spots" element={<><Nav /><Chatbot /><SpotDirectory /></>} />
+                    <Route path="/visa-docs" element={<><Nav /><Chatbot /><VisaDocs /></>} />
+                    <Route path="/cart" element={<Cart />} />
+                    <Route path="/personalization" element={<Personalization />} />
                     
                     {/* User Dashboard & Profile */}
-                    <Route path="/user-dashboard" element={<UserDashboard />} />
-                    <Route path="/userPanel" element={<UserDashboard />} /> {/* Duplicate handled */}
-                    <Route path="/profile" element={<Profile />} />
-
+                    <Route path="/user-dashboard" element={<><Nav /><Chatbot /><UserDashboard /></>} />
+                    <Route path="/userPanel" element={<><Nav /><Chatbot /><UserDashboard /></>} /> {/* Duplicate handled */}
+                    <Route path="/profile" element={<><Nav /><Chatbot /><Profile /></>} />
+                    
                     {/* Blog Routes */}
-                    <Route path="/blog" element={<TravelBlogFeed />} />
-                    <Route path="/blog/new" element={<BlogForm />} />
-                    <Route path="/blog/:id" element={<BlogDetails />} />
-                    <Route path="/blog/:id/edit" element={<BlogForm />} />
-
+                    <Route path="/blog" element={<><Nav /><Chatbot /><TravelBlogFeed /></>} />
+                    <Route path="/blog/new" element={<><Nav /><Chatbot /><BlogForm /></>} />
+                    <Route path="/blog/:id" element={<><Nav /><Chatbot /><BlogDetails /></>} />
+                    <Route path="/blog/:id/edit" element={<><Nav /><Chatbot /><BlogForm /></>} />
+                    
                     {/* Saved Blogs */}
-                    <Route path="/saved" element={<SavedBlogs />} />
-                    <Route path="/saved-blogs" element={<SavedBlogs />} />
-
+                    <Route path="/saved" element={<><Nav /><Chatbot /><SavedBlogs /></>} />
+                    <Route path="/saved-blogs" element={<><Nav /><Chatbot /><SavedBlogs /></>} />
+                    
                     {/* Tour Creation */}
                     <Route
                         path="/create-tour"
-                        element={<CreateTourForm token={localStorage.getItem("token")} />}
+                        element={<><Nav /><Chatbot /><CreateTourForm token={localStorage.getItem("token")} /></>}
                     />
                 </Route>
 

@@ -6,7 +6,8 @@ const {
     getUserById,
     deleteUser,
     updateUser,
-    profile
+    profile,
+    savePreferences
 } = require("../controller/userController");
 
 const { authMiddleware, adminOnly } = require('../middleware/authMiddleware');
@@ -20,6 +21,7 @@ router.post("/login", loginUser);
 
 // --- Protected Routes ---
 router.get('/profile', authMiddleware, profile);
+router.post('/preferences', authMiddleware, savePreferences);
 
 // --- Public/Shared Routes ---
 // Allow logged-in users to view other profiles (Removed adminOnly based on previous steps)

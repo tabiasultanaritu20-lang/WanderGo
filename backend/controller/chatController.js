@@ -85,8 +85,9 @@ const buildFallbackReply = async (msg) => {
     '• Spots: /spots',
     '• Packages: /packages',
     '• Visa & Docs: /visa-docs',
-    '• Emergency: /emergency',
-    '• Blogs: /blogs',
+    '• Emergency: /EmergencyHub',
+    '• Blogs: /blog',
+    '• Saved Blogs: /saved-blogs',
   ].join('\n');
 };
 
@@ -129,12 +130,13 @@ const buildSiteContext = async (msg) => {
   }
 
   lines.push('\n[Navigation Routes]');
-  lines.push('Home: /');
+  lines.push('Home: /dashboard');
   lines.push('Spots: /spots');
   lines.push('Packages: /packages');
   lines.push('Visa & Docs: /visa-docs');
-  lines.push('Emergency: /emergency');
-  lines.push('Blogs: /blogs');
+  lines.push('Emergency: /EmergencyHub');
+  lines.push('Blogs: /blog');
+  lines.push('Saved: /saved-blogs');
   
   lines.push('\n[Instructions]');
   lines.push('Use the data above to answer questions. If a user asks for a specific spot or package listed here, provide the details. When suggesting browsing, reference routes plainly like /spots or /packages.');
@@ -152,7 +154,8 @@ exports.chat = async (req, res) => {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      return res.status(500).json({ message: 'Gemini API key not configured' });
+      const fallback = await buildFallbackReply(message);
+      return res.json({ reply: fallback });
     }
 
     const contents = [];

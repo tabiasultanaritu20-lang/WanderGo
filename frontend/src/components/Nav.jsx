@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ShoppingCart, MapPin, Star, Compass, Bookmark, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import useUser from "../../hooks/userInfo"; // Import your hook
@@ -6,6 +6,7 @@ import useUser from "../../hooks/userInfo"; // Import your hook
 function Nav({ cartCount }) {
   const location = useLocation();
   const userData = useUser(); // Get real user data
+  const [cart, setCart] = useState(0);
 
   // Safe defaults
   const userRole = userData?.role || "user";
@@ -19,6 +20,20 @@ function Nav({ cartCount }) {
 
   // Helper to check active state
   const isActive = (path) => location.pathname === path;
+
+  useEffect(() => {
+    const update = () => {
+      const c = Number(localStorage.getItem('cartCount') || 0);
+      setCart(c);
+    };
+    update();
+    window.addEventListener('storage', update);
+    window.addEventListener('cart:update', update);
+    return () => {
+      window.removeEventListener('storage', update);
+      window.removeEventListener('cart:update', update);
+    };
+  }, []);
 
   return (
       <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
@@ -39,6 +54,13 @@ function Nav({ cartCount }) {
                 className={`text-sm font-semibold transition ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
             >
               Home
+            </Link>
+
+            <Link
+                to="/packages"
+                className={`text-sm font-medium transition ${isActive('/packages') ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              Packages
             </Link>
 
             <Link
@@ -64,6 +86,20 @@ function Nav({ cartCount }) {
                 className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
             >
               Emergency Hub
+            </Link>
+
+            <Link
+                to="/spots"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+            >
+              Spot Directory
+            </Link>
+
+            <Link
+                to="/visa-docs"
+                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
+            >
+              Visa & Docs
             </Link>
 
             <Link
@@ -93,17 +129,14 @@ function Nav({ cartCount }) {
 
           {/* Cart & Profile */}
           <div className="flex items-center gap-4">
-            <button
-                className="relative p-2 rounded-full hover:bg-slate-100 transition"
-                title="View Cart"
-            >
+            <Link to="/cart" className="relative p-2 rounded-full hover:bg-slate-100 transition" title="View Cart">
               <ShoppingCart className="w-6 h-6 text-slate-700" />
-              {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ring-2 ring-white animate-pulse">
-                {cartCount}
-              </span>
+              {(cartCount ?? cart) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ring-2 ring-white animate-pulse">
+                  {cartCount ?? cart}
+                </span>
               )}
-            </button>
+            </Link>
 
             {/* Dynamic Profile Circle */}
             <Link to="/profile">

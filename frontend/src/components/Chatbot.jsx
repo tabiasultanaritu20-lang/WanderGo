@@ -52,8 +52,6 @@ export default function Chatbot() {
     setIsTyping(true);
 
     try {
-      const navigationAction = checkNavigationKeywords(userMsg.content);
-      
       const res = await axios.post(`${API_BASE}/chat`, { 
         message: userMsg.content,
         history: messages // Pass conversation history
@@ -61,10 +59,8 @@ export default function Chatbot() {
       
       setMessages(prev => [...prev, { role: 'assistant', content: res.data.reply }]);
       
-      const assistantNav = checkNavigationKeywords(res.data.reply);
-      const navigateAction = navigationAction || assistantNav;
-      if (navigateAction) navigateAction();
-      
+      const navAction = parseExplicitNavigation(userMsg.content);
+      if (navAction) navAction();
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'assistant', content: "I apologize, but I'm having a little trouble connecting right now. Could you please try asking that again?" }]);
@@ -80,33 +76,42 @@ export default function Chatbot() {
     }
   };
 
-  const checkNavigationKeywords = (text) => {
-    const t = text.toLowerCase();
-    
-    if (t.includes('visa') || t.includes('document') || t.includes('passport')) {
-      return () => navigate('/visa-docs');
+  const parseExplicitNavigation = (text) => {
+    const t = String(text || '').toLowerCase().trim();
+    const openRe = /^(?:go to|open|navigate to|take me to)\s+(.+)$/i;
+    const m = t.match(openRe);
+    const directRe = /navigate:\s*(\/[-a-z0-9/]+)/i;
+    const d = t.match(directRe);
+    if (d && d[1]) {
+      const route = d[1];
+      return () => navigate(route);
     }
-    if (t.includes('book') || t.includes('package')) {
-      return () => navigate('/packages');
-    }
-    if (t.includes('emergency') || t.includes('help') || t.includes('police')) {
-      return () => navigate('/emergency');
-    }
-    if (t.includes('spot') || t.includes('visit')) {
-      return () => navigate('/spots');
-    }
-    if (t.includes('blog') || t.includes('news') || t.includes('article')) {
-      return () => navigate('/blogs');
-    }
-    if (t.includes('navigate: /')) {
-      const match = t.match(/navigate:\s*(\/[-a-z0-9/]+)/);
-      if (match && match[1]) {
-        const route = match[1];
-        return () => navigate(route);
-      }
+    if (m && m[1]) {
+      const target = m[1].trim();
+      const map = new Map([
+        ['packages', '/packages'],
+        ['spots', '/spots'],
+        ['blog', '/blog'],
+        ['blogs', '/blog'],
+        ['visa', '/visa-docs'],
+        ['visa & docs', '/visa-docs'],
+        ['emergency', '/EmergencyHub'],
+        ['emergency hub', '/EmergencyHub'],
+        ['home', '/dashboard'],
+        ['dashboard', '/dashboard'],
+        ['profile', '/profile'],
+        ['saved', '/saved-blogs'],
+        ['saved blogs', '/saved-blogs'],
+        ['wheel', '/wheel'],
+      ]);
+      const normalized = target.replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ');
+      const route = map.get(normalized) || map.get(normalized.split(' ')[0]);
+      if (route) return () => navigate(route);
     }
     return null;
   };
+ 
+ 
 
   return (
     <div className="fixed bottom-6 right-6 z-50">

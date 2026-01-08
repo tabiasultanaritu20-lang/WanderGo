@@ -14,6 +14,10 @@ function Dashboard() {
     const [newPkg, setNewPkg] = useState({ title: '', destinationCountry: '', destinationCity: '', price: '', imageUrl: '', features: '', duration: '', date: '' });
     const [userPackages, setUserPackages] = useState([]);
     const [tagFilters, setTagFilters] = useState({});
+    const [q, setQ] = useState('');
+    const [searchCountry, setSearchCountry] = useState('');
+    const [searchCity, setSearchCity] = useState('');
+    const [searchMaxPrice, setSearchMaxPrice] = useState('');
     const ratePackage = (id, r) => {
       setUserPackages((u) => u.map((p) => {
         if (p._id !== id) return p
@@ -43,6 +47,26 @@ function Dashboard() {
       })()
       return () => { cancelled = true }
     }, [])
+
+    const loadPackages = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (searchCountry) params.set('country', searchCountry);
+        if (searchCity) params.set('city', searchCity);
+        if (searchMaxPrice) params.set('maxPrice', Number(searchMaxPrice) || 0);
+        const url = params.toString() ? `${API_BASE}/packages?${params.toString()}` : `${API_BASE}/packages`;
+        const r = await fetch(url);
+        const j = await r.json();
+        const rows = j && typeof j === 'object' && Array.isArray(j.data) ? j.data : [];
+        setUserPackages(
+          rows.map((p) => ({
+            ...(p && typeof p === 'object' ? p : {}),
+            ratingAvg: Number(p?.ratingAvg || 0),
+            ratingCount: Number(p?.ratingCount || 0),
+          }))
+        );
+      } catch { void 0 }
+    };
 
     // Demo tours data
     const [tours, setTours] = useState([
@@ -109,7 +133,16 @@ function Dashboard() {
         else if (durationFilter === '7+ days') durationOk = days >=7;
         const tags = Array.isArray(p.features) ? p.features : [];
         const tagsOk = selectedFeatureTags.length===0 ? true : selectedFeatureTags.every((ft)=> tags.includes(ft));
-        return priceOk && durationOk && tagsOk;
+        const qStr = String(q || '').trim().toLowerCase();
+        const qOk = qStr.length === 0
+          ? true
+          : [
+              String(p.title || '').toLowerCase(),
+              String(p.destinationCity || '').toLowerCase(),
+              String(p.destinationCountry || '').toLowerCase(),
+              ...tags.map(t => String(t || '').toLowerCase())
+            ].some(s => s.includes(qStr));
+        return priceOk && durationOk && tagsOk && qOk;
     });
 
   const sortedTours = [...filteredTours].sort((a, b) => {
@@ -268,7 +301,20 @@ function Dashboard() {
                 </aside>
 
                 {/* Main Content */}
-                <main className="flex-1 p-6">
+        <main className="flex-1 p-6">
+                    <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                            <div className="md:col-span-2">
+                                <Input label="Search" name="q" placeholder="Title, city, country" value={q} onChange={(e)=>setQ(e.target.value)} />
+                            </div>
+                            <Input label="Country" name="country" placeholder="Country" value={searchCountry} onChange={(e)=>setSearchCountry(e.target.value)} />
+                            <Input label="City" name="city" placeholder="City" value={searchCity} onChange={(e)=>setSearchCity(e.target.value)} />
+                            <Input label="Max Price" name="maxPrice" type="number" placeholder="0" value={searchMaxPrice} onChange={(e)=>setSearchMaxPrice(e.target.value)} />
+                        </div>
+                        <div className="flex justify-end mt-3">
+                            <button onClick={loadPackages} className="px-3 py-2 rounded-lg bg-slate-900 text-white text-sm">Search</button>
+                        </div>
+                    </div>
                     {/* Sort Options */}
                     <div className="bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/60 p-4 mb-6 flex flex-wrap items-center gap-4">
                         <span className="text-sm font-medium text-slate-700">Sort by:</span>
@@ -437,7 +483,31 @@ function Dashboard() {
                                   </div>
                                 )}
                                 <button
-                                  onClick={() => setCartCount(cartCount + 1)}
+                                  onClick={() => {
+                                    try {
+                                      const items = JSON.parse(localStorage.getItem('cartItems') || '[]');
+                                      const idx = items.findIndex(i => i && i.kind === card.kind && String(i.id) === String(card.id));
+                                      if (idx >= 0) {
+                                        items[idx].quantity = Number(items[idx].quantity || 1) + 1;
+                                      } else {
+                                        items.push({
+                                          kind: card.kind,
+                                          id: card.id,
+                                          title: card.title,
+                                          price: Number(card.price || 0),
+                                          imageUrl: card.imageUrl,
+                                          city: card.city,
+                                          country: card.country,
+                                          quantity: 1
+                                        });
+                                      }
+                                      localStorage.setItem('cartItems', JSON.stringify(items));
+                                      const total = items.reduce((sum, it) => sum + Number(it.quantity || 1), 0);
+                                      localStorage.setItem('cartCount', String(total));
+                                      window.dispatchEvent(new Event('cart:update'));
+                                    } catch (e) { void e }
+                                    setCartCount((v)=>v+1);
+                                  }}
                                   className="px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition"
                                 >
                                   Add to Cart

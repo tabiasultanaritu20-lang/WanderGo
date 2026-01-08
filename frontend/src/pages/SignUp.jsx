@@ -76,6 +76,9 @@ const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
             if (data.token) {
                 localStorage.setItem("token", data.token);
             }
+            if (data.user) {
+                localStorage.setItem("user", JSON.stringify(data.user));
+            }
             
             onSuccess?.();
 

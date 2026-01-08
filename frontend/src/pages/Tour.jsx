@@ -9,7 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 // Components & Hooks
 import tourApi from "../api/tourApi";
 import Sidebar from "../components/layout/Sidebar.jsx";
-import Nav from "../components/nav/Nav.jsx";
 import useUser from "../hooks/userInfo";
 
 const MyCreatedTour = () => {
@@ -81,10 +80,7 @@ const MyCreatedTour = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
-            {/* Top Navigation */}
-            <div className="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-200">
-                <Nav cartCount={0} userRole={role} />
-            </div>
+            {/* Top Navigation provided by global layout */}
 
             <div className="flex flex-1 max-w-[1920px] mx-auto w-full relative">
 
