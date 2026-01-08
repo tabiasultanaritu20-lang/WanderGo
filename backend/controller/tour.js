@@ -158,10 +158,33 @@ const deleteTour = async (req, res) => {
 // --------------------- 6. Get My Tours ---------------------
 const getMyTours = async (req, res) => {
     try {
-        const tours = await Tour.find({ agency: req.user._id });
-        res.status(200).json({ success: true, count: tours.length, data: tours });
+        // 1. DEBUGGING: Check if the user is actually attached
+        // console.log("Current User in Request:", req.user);
+
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+
+        // 2. SAFETY: Handle both 'id' (JWT standard) and '_id' (Mongoose standard)
+        const userId = req.user.id || req.user._id;
+
+        // 3. QUERY: Find tours where the 'agency' field matches the user's ID
+        const tours = await Tour.find({ agency: userId });
+
+        // 4. RESPONSE
+        res.status(200).json({
+            success: true,
+            count: tours.length,
+            data: tours
+        });
+
     } catch (err) {
-        res.status(500).json({ success: false, message: "Server Error", error: err.message });
+        console.error("GetMyTours Error:", err);
+        res.status(500).json({
+            success: false,
+            message: "Server Error",
+            error: err.message
+        });
     }
 };
 

@@ -1,24 +1,37 @@
 import React from "react";
-import { ShoppingCart, MapPin, Star, Compass, Bookmark, LayoutDashboard } from "lucide-react";
+import {
+  ShoppingCart,
+  MapPin,
+  Compass,
+  Bookmark,
+  LayoutDashboard,
+  Ticket,        // Icon for Booked Tours
+  Briefcase,     // Icon for My Tours (Agency)
+  CalendarCheck  // Icon for Bookings (Agency)
+} from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import useUser from "../../hooks/userInfo"; // Import your hook
+import useUser from "../../hooks/userInfo";
 
 function Nav({ cartCount }) {
   const location = useLocation();
-  const userData = useUser(); // Get real user data
+  const userData = useUser();
 
   // Safe defaults
   const userRole = userData?.role || "user";
   const userName = userData?.userName || "User";
   const userImg = userData?.profilePictureUrl;
 
-  // Helper for initials
   const getInitials = (name) => {
     return name ? name.charAt(0).toUpperCase() : "U";
   };
 
-  // Helper to check active state
   const isActive = (path) => location.pathname === path;
+
+  // Shared generic style for links
+  const linkStyle = (path) =>
+      `text-sm font-medium transition flex items-center gap-1 ${
+          isActive(path) ? 'text-indigo-600 font-semibold' : 'text-slate-600 hover:text-slate-900'
+      }`;
 
   return (
       <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
@@ -34,61 +47,55 @@ function Nav({ cartCount }) {
 
           {/* Center Nav Links */}
           <div className="hidden lg:flex items-center gap-6">
-            <Link
-                to="/dashboard"
-                className={`text-sm font-semibold transition ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
-            >
+            <Link to="/dashboard" className={linkStyle('/dashboard')}>
               Home
             </Link>
 
-            <Link
-                to="/wheel"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-            >
+            <Link to="/wheel" className={linkStyle('/wheel')}>
               <Compass className="w-4 h-4" />
               Destination Wheel
             </Link>
 
-            {/* Role Based Link: Only show Agency link if user is 'agency' or 'admin' */}
-            {(userRole === 'agency' || userRole === 'admin') && (
-                <Link
-                    to="/create-tour"
-                    className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-                >
-                  Creat Tour
+            {/* --- USER ROLE SPECIFIC --- */}
+            {userRole === 'user' && (
+                <Link to="/my-bookings" className={linkStyle('/my-bookings')}>
+                  <Ticket className="w-4 h-4" />
+                  Booked Tours
                 </Link>
             )}
 
-            <Link
-                to="/EmergencyHub"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
+            {/* --- AGENCY / ADMIN ROLE SPECIFIC --- */}
+            {(userRole === 'agency' || userRole === 'admin') && (
+                <>
+                  <Link to="/create-tour" className={linkStyle('/create-tour')}>
+                    Create Tour
+                  </Link>
+
+                  <Link to="/agency/my-tours" className={linkStyle('/agency/my-tours')}>
+                    <Briefcase className="w-4 h-4" />
+                    My Tours
+                  </Link>
+
+                  <Link to="/agency/bookings" className={linkStyle('/agency/bookings')}>
+                    <CalendarCheck className="w-4 h-4" />
+                    Bookings
+                  </Link>
+                </>
+            )}
+
+            <Link to="/EmergencyHub" className={linkStyle('/EmergencyHub')}>
               Emergency Hub
             </Link>
 
-            <Link
-                to="/blog"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
+            <Link to="/blog" className={linkStyle('/blog')}>
               Blog
             </Link>
 
-            <Link
-                to="/saved-blogs"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-            >
+            <Link to="/saved-blogs" className={linkStyle('/saved-blogs')}>
               <Bookmark className="w-4 h-4" />
               Saved
             </Link>
 
-            {/* User Panel Link (Explicit) */}
-            <Link
-                to="/Profile"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Profile
-            </Link>
           </div>
 
           {/* Cart & Profile */}
