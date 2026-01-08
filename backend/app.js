@@ -1,7 +1,9 @@
+
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
 
 const app = express();
 
@@ -9,10 +11,14 @@ const db = require("./db/db");
 const userRouter = require("./route/userRouters");
 const blogRouter = require("./route/blogRoutes");
 const uploadRouter = require("./route/uploadRoutes");
-const tourRouter = require("./route/tourRouters");
+const tourRouter = require("./route/tour");
 const reviewRouter = require("./route/reviews");
 const emergencyRouter = require("./route/emergencyRoutes");
 const safetyRouter = require("./route/safetyRoutes");
+const bookingRouter = require('./route/booking');
+
+
+
 
 // -------------------------------
 // CORS setup
@@ -45,6 +51,7 @@ app.use("/api/tours", tourRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/emergency-contacts", emergencyRouter);
 app.use("/api", safetyRouter);
+app.use("/api/bookings", bookingRouter);
 
 // -------------------------------
 const port = 8080;

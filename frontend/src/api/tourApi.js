@@ -24,6 +24,8 @@ const tourApi = {
     // AGENCY ROUTES (Protected)
     // ==============================
 
+
+
     // GET /api/tours/agency/my-tours
     getMyTours: () => api.get("/tours/agency/my-tours"),
 

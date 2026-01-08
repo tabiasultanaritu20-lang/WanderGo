@@ -1,111 +1,88 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import Nav from '../components/Nav.jsx';         // Assuming Nav.jsx is defined elsewhere
-import Dashboard from '../components/Dashboard.jsx'; // Assuming Dashboard.jsx is defined elsewhere
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Nav from '../components/Nav.jsx';
+import Dashboard from '../components/Dashboard.jsx';
+import tourApi from '../api/tourApi'; // Ensure this path is correct
 
-// Demo tours data - kept in the root for central state management
-const initialTours = [
-    {
-        id: 1,
-        title: 'Paris Adventure: Eiffel Tower & Louvre',
-        location: 'Paris, France',
-        price: 1200,
-        date: '2024-06-15',
-        imageUrl: 'https://placehold.co/400x250/2563EB/FFFFFF?text=Paris+Adventure',
-        rating: 4.5,
-        duration: '5 days',
-        type: 'Cultural'
-    },
-    {
-        id: 2,
-        title: 'Tokyo Explorer: Shrines and Neon Cityscapes',
-        location: 'Tokyo, Japan',
-        price: 1500,
-        date: '2024-07-01',
-        imageUrl: 'https://placehold.co/400x250/F59E0B/FFFFFF?text=Tokyo+Explorer',
-        rating: 4.8,
-        duration: '7 days',
-        type: 'Adventure'
-    },
-    {
-        id: 3,
-        title: 'Bali Retreat: Sun, Sand, and Yoga',
-        location: 'Bali, Indonesia',
-        price: 900,
-        date: '2024-05-20',
-        imageUrl: 'https://placehold.co/400x250/10B981/FFFFFF?text=Bali+Retreat',
-        rating: 4.6,
-        duration: '6 days',
-        type: 'Beach'
-    },
-    {
-        id: 4,
-        title: 'New York City: Broadway & Central Park',
-        location: 'NYC, USA',
-        price: 1800,
-        date: '2024-09-10',
-        imageUrl: 'https://placehold.co/400x250/DC2626/FFFFFF?text=NYC+Lights',
-        rating: 4.7,
-        duration: '3 days',
-        type: 'Cultural'
-    },
-    {
-        id: 5,
-        title: 'Swiss Alps Hiking: Majestic Views',
-        location: 'Swiss Alps, Switzerland',
-        price: 2200,
-        date: '2024-08-01',
-        imageUrl: 'https://placehold.co/400x250/06B6D4/FFFFFF?text=Swiss+Hike',
-        rating: 4.9,
-        duration: '10 days',
-        type: 'Adventure'
-    },
-    {
-        id: 6,
-        title: 'Caribbean Dive Trip',
-        location: 'Grand Cayman',
-        price: 1100,
-        date: '2024-11-05',
-        imageUrl: 'https://placehold.co/400x250/0F766E/FFFFFF?text=Dive+Trip',
-        rating: 4.4,
-        duration: '4 days',
-        type: 'Beach'
-    },
-    {
-        id: 7,
-        title: 'Amazon River Expedition',
-        location: 'Manaus, Brazil',
-        price: 2800,
-        date: '2024-10-20',
-        imageUrl: 'https://placehold.co/400x250/84CC16/FFFFFF?text=Amazon+Expedition',
-        rating: 4.7,
-        duration: '14 days',
-        type: 'Adventure'
-    },
-];
-
-// Helper function to parse duration string to number of days
-const parseDuration = (durationStr) => {
-    const match = durationStr.match(/(\d+)\s*days/i);
-    return match ? parseInt(match[1], 10) : 0;
+// Helper to safely parse duration
+const getDurationNumber = (duration) => {
+    if (typeof duration === 'number') return duration;
+    if (typeof duration === 'string') {
+        const match = duration.match(/(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+    }
+    return 0;
 };
 
 function MainDash() {
     // --- Global State ---
-    const [tours] = useState(initialTours);
+    const [tours, setTours] = useState([]); // Initialize as empty array
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
     const [cartCount, setCartCount] = useState(0);
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+    // --- Navigation ---
+    const navigate = useNavigate();
 
     // --- Sorting State ---
     const [sortBy, setSortBy] = useState('price');
     const [sortOrder, setSortOrder] = useState('asc');
 
-    // --- Filtering State (New) ---
-    const [priceRange, setPriceRange] = useState(3000); // Max price
+    // --- Filtering State ---
+    const [priceRange, setPriceRange] = useState(5000);
     const [durationFilter, setDurationFilter] = useState('any');
-    const [tourTypesFilter, setTourTypesFilter] = useState([]); // Default to empty array
+    const [tourTypesFilter, setTourTypesFilter] = useState([]);
+
+    // --- Fetch Data from API (Updated) ---
+    useEffect(() => {
+        const fetchTours = async () => {
+            try {
+                setLoading(true);
+                const response = await tourApi.getAll();
+
+                // DEBUG: Inspect this in Chrome Console > Console tab
+                console.log("API RAW RESPONSE:", response);
+
+                let tourArray = [];
+
+                // ATTEMPT 1: Is the response.data itself the array?
+                if (Array.isArray(response.data)) {
+                    tourArray = response.data;
+                }
+                // ATTEMPT 2: Standard MERN (response.data.data.tours)
+                else if (response.data?.data?.tours && Array.isArray(response.data.data.tours)) {
+                    tourArray = response.data.data.tours;
+                }
+                // ATTEMPT 3: Natours style (response.data.tours)
+                else if (response.data?.tours && Array.isArray(response.data.tours)) {
+                    tourArray = response.data.tours;
+                }
+                // ATTEMPT 4: Generic data wrapper (response.data.data)
+                else if (response.data?.data && Array.isArray(response.data.data)) {
+                    tourArray = response.data.data;
+                }
+
+                console.log("EXTRACTED TOURS:", tourArray); // Verify what we extracted
+                setTours(tourArray);
+                setError(null);
+
+            } catch (err) {
+                console.error("Error fetching tours:", err);
+                setError("Failed to load tours. Please try again later.");
+                setTours([]); // Safety fallback
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTours();
+    }, []);
 
     // --- Callbacks ---
-    const handleAddToCart = useCallback(() => {
+    const handleAddToCart = useCallback((e) => {
+        if(e) e.stopPropagation();
         setCartCount(prev => prev + 1);
         console.log("Tour added to cart.");
     }, []);
@@ -118,33 +95,39 @@ function MainDash() {
         setIsMobileFilterOpen(prev => !prev);
     }, []);
 
+    const handleTourClick = useCallback((id) => {
+        navigate(`/tours/${id}`);
+    }, [navigate]);
+
     // --- Combined Filtering and Sorting Logic ---
     const filteredAndSortedTours = useMemo(() => {
+        // SAFETY CHECK: This prevents the "tours.filter is not a function" crash
+        if (!Array.isArray(tours)) {
+            return [];
+        }
+
         // 1. Filtering
         const filteredTours = tours.filter(tour => {
-
-            // Filter by Price
-            if (tour.price > priceRange) {
-                return false;
-            }
+            // Safety check for missing price
+            const price = tour.price || 0;
+            if (price > priceRange) return false;
 
             // Filter by Tour Type
-            if (tourTypesFilter.length > 0 && !tourTypesFilter.includes(tour.type)) {
-                return false;
+            if (tourTypesFilter.length > 0) {
+                // Check if tour.type exists, otherwise exclude or include based on logic
+                if (!tour.type || !tourTypesFilter.includes(tour.type)) {
+                    return false;
+                }
             }
 
             // Filter by Duration
             if (durationFilter !== 'any') {
-                const tourDuration = parseDuration(tour.duration);
+                const tourDuration = getDurationNumber(tour.duration);
                 let durationCheck = false;
 
-                if (durationFilter === 'short' && tourDuration >= 1 && tourDuration <= 3) {
-                    durationCheck = true;
-                } else if (durationFilter === 'medium' && tourDuration >= 4 && tourDuration <= 7) {
-                    durationCheck = true;
-                } else if (durationFilter === 'long' && tourDuration > 7) {
-                    durationCheck = true;
-                }
+                if (durationFilter === 'short' && tourDuration >= 1 && tourDuration <= 3) durationCheck = true;
+                else if (durationFilter === 'medium' && tourDuration >= 4 && tourDuration <= 7) durationCheck = true;
+                else if (durationFilter === 'long' && tourDuration > 7) durationCheck = true;
 
                 if (!durationCheck) return false;
             }
@@ -156,15 +139,38 @@ function MainDash() {
         return filteredTours.sort((a, b) => {
             let comparison = 0;
             if (sortBy === 'price') {
-                comparison = a.price - b.price;
+                comparison = (a.price || 0) - (b.price || 0);
             } else if (sortBy === 'location') {
-                comparison = a.location.localeCompare(b.location);
+                const locA = a.location || '';
+                const locB = b.location || '';
+                comparison = locA.localeCompare(locB);
             } else if (sortBy === 'date') {
-                comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+                // Handle missing dates or startDates array
+                const dateA = a.date || (a.startDates ? a.startDates[0] : Date.now());
+                const dateB = b.date || (b.startDates ? b.startDates[0] : Date.now());
+                comparison = new Date(dateA).getTime() - new Date(dateB).getTime();
             }
             return sortOrder === 'asc' ? comparison : -comparison;
         });
     }, [tours, sortBy, sortOrder, priceRange, durationFilter, tourTypesFilter]);
+
+    // --- Render ---
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="text-xl text-blue-600 font-semibold animate-pulse">Loading Tours...</div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="text-red-500 font-semibold">{error}</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 font-sans">
@@ -172,7 +178,7 @@ function MainDash() {
             <Dashboard
                 // Tour Data
                 sortedTours={filteredAndSortedTours}
-                totalToursCount={filteredAndSortedTours.length} // Count of *filtered* tours
+                totalToursCount={filteredAndSortedTours.length}
 
                 // Sorting Props
                 sortBy={sortBy}
@@ -180,7 +186,7 @@ function MainDash() {
                 sortOrder={sortOrder}
                 handleSortOrderToggle={handleSortOrderToggle}
 
-                // Filtering Props (New)
+                // Filtering Props
                 priceRange={priceRange}
                 setPriceRange={setPriceRange}
                 duration={durationFilter}
@@ -190,6 +196,10 @@ function MainDash() {
 
                 // Action Handlers
                 handleAddToCart={handleAddToCart}
+                onTourClick={handleTourClick}
+
+                isMobileFilterOpen={isMobileFilterOpen}
+                handleMobileFilterToggle={handleMobileFilterToggle}
             />
         </div>
     );

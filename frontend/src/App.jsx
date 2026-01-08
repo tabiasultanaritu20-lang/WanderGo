@@ -17,7 +17,10 @@ import CreateTourForm from "../src/pages/CreateTourForm.jsx";
 import ProtectedRoute from "../routes/ProtectedRoute.jsx";
 import UserDashboard from "./pages/userDashboard/UserDashboard.jsx";
 import Profile from "./pages/Profile.jsx";
-import UserPanel from "./pages/userDashboard/UserDashboard.jsx"; // Import the new component
+import UserPanel from "./pages/userDashboard/UserDashboard.jsx";
+import TourDetail from "./pages/TourDetail.jsx";
+import Booking from "./pages/Booking.jsx";
+import CheckoutSuccess from "./pages/CheckoutSuccess.jsx"; // Import the new component
 
 function App() {
     return (
@@ -48,6 +51,10 @@ function App() {
                     {/* Saved Blogs */}
                     <Route path="/saved" element={<SavedBlogs />} />
                     <Route path="/saved-blogs" element={<SavedBlogs />} />
+                    <Route path="/tours/:id" element={<TourDetail />} />
+
+                    <Route path="/tours/:id/book" element={<Booking />} />
+                    <Route path="/checkout-success" element={<CheckoutSuccess />} />
 
                     {/* Tour Creation */}
                     <Route
