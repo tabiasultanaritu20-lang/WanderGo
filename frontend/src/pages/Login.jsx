@@ -5,7 +5,10 @@ import Input from "../components/Input.jsx";
 import quotes from "../utils/quotes";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 
-const Login = ({ onSuccess }) => {
+const Login = ({
+                   action = "/api/user/login",
+                   onSuccess,
+               }) => {
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
     const [quoteIndex, setQuoteIndex] = useState(0);

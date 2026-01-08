@@ -5,13 +5,7 @@ const jwt = require("jsonwebtoken");
 // ======================== REGISTER USER ========================
 const registerUser = async (req, res) => {
     try {
-        // Destructure all possible input fields including new ones like 'city'
-        let { name, email, password, number, country, city, role, adminKey } = req.body;
-
-        // 1. Check if all required fields exist (Added city if you want it required, otherwise remove it)
-        if (!name || !email || !password || !number || !country) {
-            return res.status(400).json({ message: "All required fields (name, email, password, number, country) must be provided" });
-        }
+        let { name, email, password, number, country, role } = req.body;
 
         // 2. Check if user already exists
         const existingUser = await User.findOne({ email });
@@ -23,9 +17,6 @@ const registerUser = async (req, res) => {
 
         // Handle admin role
         if (requestedRole === "admin") {
-            if (adminKey !== process.env.ADMIN_ROLE) {
-                return res.status(403).json({ message: "Not allowed to create admin user" });
-            }
             role = "admin";
         }
         // Handle agency role
@@ -53,12 +44,12 @@ const registerUser = async (req, res) => {
 
         await user.save();
 
-        // 5. Generate JWT token (Standardized Payload)
+        //  5. Generate JWT token
         const token = jwt.sign(
-            {
-                id: user._id,
+            { 
+                id: user.id,
                 email: user.email,
-                role: user.role
+                role: user.role 
             },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }

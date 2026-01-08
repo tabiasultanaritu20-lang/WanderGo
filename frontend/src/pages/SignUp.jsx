@@ -6,7 +6,9 @@ import countries from "../utils/country";
 import quotes from "../utils/quotes";
 import { Link, useNavigate } from "react-router-dom";
 
-const Signup = ({ onSuccess }) => {
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
+const Signup = ({ action = `${API_BASE}/user/register`, onSuccess }) => {
     const [form, setForm] = useState({
         name: "",
         email: "",
@@ -15,7 +17,7 @@ const Signup = ({ onSuccess }) => {
         country: "Bangladesh",
         city: "", // Added City
         role: "user",
-        adminKey: "",
+        
     });
 
     const [loading, setLoading] = useState(false);
@@ -33,12 +35,8 @@ const Signup = ({ onSuccess }) => {
         if (form.password.length < 6) return false;
         if (!/^\+?[0-9\-()\s]{6,}$/.test(form.number)) return false;
         if (!countries.includes(form.country)) return false;
-        if (!form.city.trim()) return false; // Validate City
-
-        // If admin selected, adminKey must be present
-        if (form.role === "admin" && !form.adminKey.trim()) return false;
         return true;
-    }, [form]);
+    }, [form.name, form.email, form.password.length, form.number, form.country]);
 
     const onChange = (e) => {
         const { name, value } = e.target;
@@ -55,21 +53,30 @@ const Signup = ({ onSuccess }) => {
 
         try {
             setLoading(true);
+            const res = await fetch(action, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // Include role and adminKey in payload
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                    number: form.number,
+                    country: form.country,
+                    role: form.role,
+                    adminKey: form.role === "admin" ? form.adminKey : undefined,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data?.message || "Signup failed. Please try again.");
+            }
 
-            // Use baseApi instead of fetch
-            const res = await baseApi.post("/user/register", form);
-
-            // Destructure response
-            const { token, user, message } = res.data;
-
-            // 1. Store Token
-            localStorage.setItem("token", token);
-
-            // 2. Store User Data (for immediate UI updates)
-            localStorage.setItem("user", JSON.stringify(user));
-
-            toast.success(message || "Account created successfully!");
-
+            const data = await res.json();
+            if (data.token) {
+                localStorage.setItem("token", data.token);
+            }
+            
             onSuccess?.();
 
             // Clear form
@@ -264,7 +271,6 @@ const Signup = ({ onSuccess }) => {
                                 value={form.adminKey}
                                 onChange={onChange}
                                 placeholder="Enter admin secret"
-                                required
                             />
                         )}
 

@@ -4,7 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import BlogCard from "../components/BlogCard"; // Reusing your nice card!
 import { Search, MapPin, Filter, Plus, Home } from "lucide-react";
 
-const API_URL = "http://localhost:8080/api/blogs";
+const API_BASE_URL = 'http://localhost:8080/api';
 
 const TravelBlogFeed = () => {
   const navigate = useNavigate();

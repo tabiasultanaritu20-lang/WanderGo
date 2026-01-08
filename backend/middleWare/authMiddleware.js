@@ -5,28 +5,30 @@ const authMiddleware = (req, res, next) => {
   if (!token) return res.status(401).json({ message: "No token" });
 
   try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Normalize token payload: if nested in playLoad, flatten it
+    req.user = decoded.playLoad ? { ...decoded, ...decoded.playLoad } : decoded;
     next();
   } catch (err) {
-    return res.status(403).json({ message: err.message });
+    res.status(403).json({ message: err.message });
   }
 };
 
 const adminOnly = (req, res, next) => {
-  const role = req.user?.playLoad?.role || req.user?.role;
-  if (role !== "admin") {
+  if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Access denied. Admin only." });
   }
   next();
 };
 
 const Agency_And_Admin = (req, res, next) => {
-  const role = req.user?.playLoad?.role || req.user?.role;
+  // Role is now directly available on req.user due to normalization above
+  const role = req.user.role;
+
   if (role !== "agency" && role !== "admin") {
-    return res
-      .status(403)
-      .json({ message: "Access denied. Admin and Agency only." });
+    return res.status(403).json({ message: "Access denied. Admin and Agency only." });
   }
+
   next();
 };
 

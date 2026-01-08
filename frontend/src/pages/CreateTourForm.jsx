@@ -38,6 +38,32 @@ function CreateTourForm({ token: initialToken }) {
   const [token, setToken] = useState(null);
   const [agencyId, setAgencyId] = useState(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Decode JWT without external libraries
+  const decodeToken = (jwt) => {
+    try {
+      const base64 = jwt.split(".")[1];
+      const decoded = JSON.parse(atob(base64));
+      return decoded.id; // adjust to your backend payload
+    } catch (err) {
+      return null;
+    }
+  };
+
+  // Check authentication on mount
+  useEffect(() => {
+    const saved = initialToken || localStorage.getItem("token");
+
+    if (saved) {
+      const id = decodeToken(saved);
+      setToken(saved);
+      setAgencyId(id);
+    }
+
+    setIsCheckingAuth(false); // authentication check completed
+  }, [initialToken]);
+
+  // 2) Declare all form hooks (always at top level)
   const [formData, setFormData] = useState({
     title: "",
     destinationCountry: "",
@@ -83,8 +109,8 @@ function CreateTourForm({ token: initialToken }) {
     const mockApiUrl = `http://localhost:8080/api/tours/${agencyId}/tours`;
 
     try {
-      const res = await mockApiPost(
-          mockApiUrl,
+      const res = await axios.post(
+          `http://localhost:8080/api/tours/${agencyId}/tours`,
           formData,
           { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
       );

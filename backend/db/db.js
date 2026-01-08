@@ -3,16 +3,17 @@ const mongoose = require("mongoose");
 const connectDB = async () => {
     const mongoURI = process.env.MONGOURI;
     if (!mongoURI) {
-        console.error("MONGOURI is not defined in environment variables.");
-        process.exit(1)
+        console.warn("MONGOURI is not defined in environment variables. Skipping MongoDB connection.");
+        return false;
     }
 
     try {
         await mongoose.connect(mongoURI);
         console.log("MongoDB Connected");
+        return true;
     } catch (error) {
         console.error("MongoDB Connection Failed:", error.message);
-        process.exit(1);
+        return false;
     }
 };
 
