@@ -76,7 +76,7 @@ exports.createBlog = async (req, res) => {
     const categoriesArr = categories ? categories.split(",").map((s) => s.trim()).filter(Boolean) : [];
 
     // Handle Images
-    const imageUrls = (req.files || []).map((f) => `/uploads/${f.filename}`);
+    const imageUrls = (req.files || []).map((f) => f.path);
     
     // The first image in the list is the Cover. 
     // The rest (plus the cover) are the gallery.
