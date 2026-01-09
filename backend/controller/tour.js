@@ -1,26 +1,24 @@
+// 👇 FIX 1: Import Tour directly (no destructuring)
+const Tour = require('../model/tour');
 
-
-
-const { Tour, validateTour } = require('../model/tour');
 // --------------------- 1. Create Tour ---------------------
 const createTour = async (req, res) => {
     try {
-        // Inject logged-in agency ID
-        const tourData = {
-            ...req.body,
-            agency: req.user._id.toString()
-        };
+        console.log("Incoming Data:", req.body);
 
-        // Joi validation
-        const { error } = validateTour(tourData);
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
         }
 
-        const savedTour = await new Tour(tourData).save();
+        const agencyId = req.user._id || req.user.id;
+
+        const tourData = {
+            ...req.body,
+            agency: agencyId
+        };
+
+        const newTour = new Tour(tourData);
+        const savedTour = await newTour.save();
 
         res.status(201).json({
             success: true,
@@ -29,6 +27,13 @@ const createTour = async (req, res) => {
         });
 
     } catch (err) {
+        console.error("Create Tour Error:", err);
+        // Handle Mongoose Validation Errors specifically
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
+
         res.status(500).json({
             success: false,
             message: "Server Error",
@@ -40,21 +45,11 @@ const createTour = async (req, res) => {
 // --------------------- 2. Get All Tours ---------------------
 const getAllTours = async (req, res) => {
     try {
-        const {
-            page = 1,
-            limit = 10,
-            sort = '-createdAt',
-            country,
-            category,
-            minPrice,
-            maxPrice
-        } = req.query;
-
-        const query = { isActive: true };
+        const { page = 1, limit = 10, sort = '-createdAt', country, category, minPrice, maxPrice } = req.query;
+        const query = {}; // Removed { isActive: true } unless you add that field to schema
 
         if (country) query.destinationCountry = country;
         if (category) query.category = category;
-
         if (minPrice || maxPrice) {
             query.pricePerPerson = {};
             if (minPrice) query.pricePerPerson.$gte = Number(minPrice);
@@ -62,9 +57,6 @@ const getAllTours = async (req, res) => {
         }
 
         const tours = await Tour.find(query)
-            // --- POPULATE ADDED HERE ---
-            // 1st arg: The field in Tour schema to populate ('agency')
-            // 2nd arg: The fields to select from the User schema ('name email profilePicture')
             .populate('agency', 'name email')
             .sort(sort)
             .skip((page - 1) * limit)
@@ -90,10 +82,9 @@ const getAllTours = async (req, res) => {
 const getTourById = async (req, res) => {
     try {
         const tour = await Tour.findById(req.params.id)
-            // 👇 UPDATE THIS LINE: Add 'ratingsAverage' and 'ratingsQuantity'
             .populate('agency', 'name email profilePictureUrl ratingsAverage ratingsQuantity')
             .populate({
-                path: 'reviews',
+                path: 'reviews', // Ensure you have virtual populate set up in Model if using this
                 populate: { path: 'user', select: 'name profilePictureUrl' }
             });
 
@@ -108,6 +99,7 @@ const getTourById = async (req, res) => {
         res.status(500).json({ success: false, message: "Server Error", error: err.message });
     }
 };
+
 // --------------------- 4. Update Tour ---------------------
 const updateTour = async (req, res) => {
     try {
@@ -115,45 +107,17 @@ const updateTour = async (req, res) => {
 
         if (!tour) return res.status(404).json({ success: false, message: "Tour not found" });
 
-        // Ownership check
         if (tour.agency.toString() !== req.user._id.toString()) {
             return res.status(403).json({ success: false, message: "Not authorized to update" });
         }
 
-        // 1. Create a merged object for validation
-        // We use tour.toObject() to get a clean JS object, then strip internal fields
-        const currentTourData = tour.toObject();
-        delete currentTourData._id;
-        delete currentTourData.__v;
-        delete currentTourData.createdAt;
-        delete currentTourData.updatedAt;
+        // 👇 FIX 2: Removed external 'validateTour' function.
+        // We rely on { runValidators: true } in findByIdAndUpdate below.
 
-        // Merge existing data with the new request body
-        const updatedData = {
-            ...currentTourData,
-            ...req.body,
-            agency: tour.agency.toString()
-        };
-
-        // 2. Validate
-        // We pass a second argument 'isUpdate' (explained below) or we accept that
-        // startDate validation might fail if strictly enforcing 'greater now'.
-        // A quick fix is to allow unknown fields in Joi, but better to clean data as above.
-
-        const { error } = validateTour(updatedData, true); // Pass true to signal an update
-
-        if (error) {
-            return res.status(400).json({
-                success: false,
-                message: error.details[0].message
-            });
-        }
-
-        // 3. Perform the Update
         const updatedTour = await Tour.findByIdAndUpdate(
             req.params.id,
             { $set: req.body },
-            { new: true, runValidators: true } // Mongoose validators run here too
+            { new: true, runValidators: true }
         );
 
         res.status(200).json({
@@ -163,9 +127,14 @@ const updateTour = async (req, res) => {
         });
 
     } catch (err) {
+        if (err.name === 'ValidationError') {
+            const messages = Object.values(err.errors).map(val => val.message);
+            return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
         res.status(500).json({ success: false, message: "Server Error", error: err.message });
     }
 };
+
 // --------------------- 5. Delete Tour ---------------------
 const deleteTour = async (req, res) => {
     try {
@@ -186,11 +155,23 @@ const deleteTour = async (req, res) => {
     }
 };
 
-// --------------------- 6. Get Tours by Logged-in Agency ---------------------
+// --------------------- 6. Get My Tours ---------------------
 const getMyTours = async (req, res) => {
     try {
-        const tours = await Tour.find({ agency: req.user._id });
+        // 1. DEBUGGING: Check if the user is actually attached
+        // console.log("Current User in Request:", req.user);
 
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+
+        // 2. SAFETY: Handle both 'id' (JWT standard) and '_id' (Mongoose standard)
+        const userId = req.user.id || req.user._id;
+
+        // 3. QUERY: Find tours where the 'agency' field matches the user's ID
+        const tours = await Tour.find({ agency: userId });
+
+        // 4. RESPONSE
         res.status(200).json({
             success: true,
             count: tours.length,
@@ -198,7 +179,12 @@ const getMyTours = async (req, res) => {
         });
 
     } catch (err) {
-        res.status(500).json({ success: false, message: "Server Error", error: err.message });
+        console.error("GetMyTours Error:", err);
+        res.status(500).json({
+            success: false,
+            message: "Server Error",
+            error: err.message
+        });
     }
 };
 

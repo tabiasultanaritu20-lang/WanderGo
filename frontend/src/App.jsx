@@ -33,11 +33,11 @@ function App() {
         <BrowserRouter>
             <Routes>
                 {/* --- Public Routes --- */}
-                
-                {/* FIX: Smart Home Route. 
-                    If logged in -> Go to Dashboard. 
-                    If not -> Go to Login. 
-                    This stops the "Wheel redirect loop". 
+
+                {/* FIX: Smart Home Route.
+                    If logged in -> Go to Dashboard.
+                    If not -> Go to Login.
+                    This stops the "Wheel redirect loop".
                 */}
                 <Route 
                     path="/" 
@@ -79,6 +79,7 @@ function App() {
                         path="/create-tour"
                         element={<><Nav /><Chatbot /><CreateTourForm token={localStorage.getItem("token")} /></>}
                     />
+
                 </Route>
 
                 {/* 404 Fallback */}

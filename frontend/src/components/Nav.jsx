@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ShoppingCart, MapPin, Star, Compass, Bookmark, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import useUser from "../../hooks/userInfo"; // Import your hook
+import useUser from "../../hooks/userInfo";
 
 function Nav({ cartCount }) {
   const location = useLocation();
@@ -13,12 +13,10 @@ function Nav({ cartCount }) {
   const userName = userData?.userName || "User";
   const userImg = userData?.profilePictureUrl;
 
-  // Helper for initials
   const getInitials = (name) => {
     return name ? name.charAt(0).toUpperCase() : "U";
   };
 
-  // Helper to check active state
   const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
@@ -49,10 +47,7 @@ function Nav({ cartCount }) {
 
           {/* Center Nav Links */}
           <div className="hidden lg:flex items-center gap-6">
-            <Link
-                to="/dashboard"
-                className={`text-sm font-semibold transition ${isActive('/dashboard') ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`}
-            >
+            <Link to="/dashboard" className={linkStyle('/dashboard')}>
               Home
             </Link>
 
@@ -71,20 +66,34 @@ function Nav({ cartCount }) {
               Destination Wheel
             </Link>
 
-            {/* Role Based Link: Only show Agency link if user is 'agency' or 'admin' */}
-            {(userRole === 'agency' || userRole === 'admin') && (
-                <Link
-                    to="/create-tour"
-                    className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-                >
-                  Agency
+            {/* --- USER ROLE SPECIFIC --- */}
+            {userRole === 'user' && (
+                <Link to="/mybooked" className={linkStyle('/my-bookings')}>
+                  <Ticket className="w-4 h-4" />
+                  Booked Tours
                 </Link>
             )}
 
-            <Link
-                to="/EmergencyHub"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition"
-            >
+            {/* --- AGENCY / ADMIN ROLE SPECIFIC --- */}
+            {(userRole === 'agency' || userRole === 'admin') && (
+                <>
+                  <Link to="/create-tour" className={linkStyle('/create-tour')}>
+                    Create Tour
+                  </Link>
+
+                  <Link to="/agency/my-tours" className={linkStyle('/agency/my-tours')}>
+                    <Briefcase className="w-4 h-4" />
+                    My Tours
+                  </Link>
+
+                  <Link to="/agency/bookings" className={linkStyle('/agency/bookings')}>
+                    <CalendarCheck className="w-4 h-4" />
+                    Bookings
+                  </Link>
+                </>
+            )}
+
+            <Link to="/EmergencyHub" className={linkStyle('/EmergencyHub')}>
               Emergency Hub
             </Link>
 
@@ -109,22 +118,11 @@ function Nav({ cartCount }) {
               Blog
             </Link>
 
-            <Link
-                to="/saved-blogs"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-            >
+            <Link to="/saved-blogs" className={linkStyle('/saved-blogs')}>
               <Bookmark className="w-4 h-4" />
               Saved
             </Link>
 
-            {/* User Panel Link (Explicit) */}
-            <Link
-                to="/Profile"
-                className="text-sm font-medium text-slate-600 hover:text-slate-900 transition flex items-center gap-1"
-            >
-              <LayoutDashboard className="w-4 h-4" />
-              Profile
-            </Link>
           </div>
 
           {/* Cart & Profile */}

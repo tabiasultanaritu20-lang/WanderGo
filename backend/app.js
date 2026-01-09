@@ -1,7 +1,10 @@
+const dotenv = require('dotenv');
+
+dotenv.config();
+
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
 
 const app = express();
 
@@ -9,16 +12,19 @@ const db = require("./db/db");
 const userRouter = require("./route/userRouters");
 const blogRouter = require("./route/blogRoutes");
 const uploadRouter = require("./route/uploadRoutes");
-const tourRouter = require("./route/tourRouters");
 const packageRouter = require("./route/packageRoutes");
 const spotRouter = require("./route/spotRoutes");
 const documentRouter = require("./route/documentRoutes");
 const visaRouter = require("./route/visaRoutes");
 const chatRouter = require("./route/chatRoutes");
+const tourRouter = require("./route/tour");
 const reviewRouter = require("./route/reviews");
 const emergencyRouter = require("./route/emergencyRoutes");
 const safetyRouter = require("./route/safetyRoutes");
-const { ensureSeededEmergency } = require('./controller/emergencyController');
+const bookingRouter = require('./route/booking');
+
+
+
 
 // -------------------------------
 // CORS setup
@@ -44,7 +50,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 db();
 
 // Seed defaults (emergency contacts)
-ensureSeededEmergency();
+// ensureSeededEmergency();
 
 // -------------------------------
 // Routes
@@ -60,6 +66,7 @@ app.use('/api/chat', chatRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/emergency-contacts", emergencyRouter);
 app.use("/api", safetyRouter);
+app.use("/api/bookings", bookingRouter);
 
 // -------------------------------
 const port = Number(process.env.PORT) || 8080;
